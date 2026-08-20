@@ -6,8 +6,7 @@ import { motion } from "framer-motion";
 import type { Review } from "@/data/reviews";
 import { coverFor, placeholderGradient } from "@/lib/photos";
 import { formatShortDate } from "@/lib/format";
-import Rating from "./Rating";
-import DraftBadge from "./DraftBadge";
+import TierBadge from "./TierBadge";
 
 export default function ReviewCard({
   review,
@@ -22,20 +21,18 @@ export default function ReviewCard({
 
   return (
     <motion.article
-      layout
       initial={{ opacity: 0, y: 28 }}
       animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0, y: -12 }}
       transition={{
         duration: 0.55,
         delay: Math.min(index * 0.05, 0.4),
         ease: [0.16, 1, 0.3, 1],
       }}
-      className="group"
+      className="group h-full"
     >
       <Link
         href={`/reviews/${review.slug}`}
-        className="block overflow-hidden rounded-2xl border border-line bg-surface transition-colors duration-500 hover:border-ember/40"
+        className="flex h-full flex-col overflow-hidden rounded-2xl border border-line bg-surface transition-colors duration-500 hover:border-ember/40"
       >
         <div className="relative aspect-[4/3] overflow-hidden">
           {cover ? (
@@ -60,36 +57,44 @@ export default function ReviewCard({
 
           <div className="absolute inset-x-0 bottom-0 h-2/3 bg-gradient-to-t from-surface via-surface/60 to-transparent" />
 
-          <div className="absolute left-4 top-4 flex gap-2">
+          <div className="absolute left-4 top-4 flex flex-wrap gap-2">
             <span className="rounded-full bg-ink/70 px-2.5 py-1 text-[0.65rem] uppercase tracking-wider text-cream backdrop-blur-sm">
               {review.city}
             </span>
-            {review.draft && <DraftBadge />}
+            <TierBadge tier={review.tier} size="sm" />
+            {review.closed && (
+              <span className="rounded-full bg-ink/70 px-2.5 py-1 text-[0.65rem] uppercase tracking-wider text-muted backdrop-blur-sm">
+                Closed
+              </span>
+            )}
           </div>
         </div>
 
-        <div className="-mt-8 relative space-y-3 p-5">
+        <div className="-mt-8 relative flex flex-1 flex-col gap-3 p-5">
           <div className="flex items-start justify-between gap-4">
             <h3 className="font-display text-2xl leading-tight line-clamp-2">
               {review.name}
             </h3>
-            <span className="shrink-0 pt-1.5 text-xs text-muted">
-              {review.price}
-            </span>
+            {review.price && (
+              <span className="shrink-0 pt-1.5 text-xs text-muted">
+                {review.price}
+              </span>
+            )}
           </div>
 
-          <p className="text-sm leading-relaxed text-muted line-clamp-2">
+          <p className="flex-1 text-sm leading-relaxed text-muted line-clamp-3">
             {review.verdict}
           </p>
 
-          <div className="flex items-center justify-between gap-4 border-t border-line pt-3">
-            <span className="shrink-0">
-              <Rating value={review.rating} size="sm" />
-            </span>
-            <span className="text-right text-xs leading-snug text-muted">
+          <div className="flex items-end justify-between gap-4 border-t border-line pt-3 text-xs text-muted">
+            <span className="min-w-0">
               {review.cuisine}
-              <br />
-              {formatShortDate(review.visitedAt)}
+              {review.revisited && (
+                <span className="ml-2 text-ember">· been back</span>
+              )}
+            </span>
+            <span className="shrink-0 text-right">
+              {review.visitedAt ? formatShortDate(review.visitedAt) : "Undated"}
             </span>
           </div>
         </div>

@@ -3,10 +3,10 @@ import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import { reviews, reviewsByDate, getReview } from "@/data/reviews";
+import { TIERS } from "@/lib/tiers";
 import { coverFor, placeholderGradient } from "@/lib/photos";
 import { formatDate, formatTime } from "@/lib/format";
-import Rating from "@/components/Rating";
-import DraftBadge from "@/components/DraftBadge";
+import TierBadge from "@/components/TierBadge";
 import Reveal from "@/components/Reveal";
 import Gallery from "@/components/Gallery";
 import ReviewCard from "@/components/ReviewCard";
@@ -26,6 +26,11 @@ export async function generateMetadata({ params }: Params): Promise<Metadata> {
     description: review.verdict,
     openGraph: { title: review.name, description: review.verdict },
   };
+}
+
+/** Booking times only exist on calendar-sourced entries, not ledger dates. */
+function hasTime(iso: string) {
+  return iso.length > 10;
 }
 
 export default async function ReviewPage({ params }: Params) {
@@ -71,13 +76,25 @@ export default async function ReviewPage({ params }: Params) {
             </Link>
 
             <div className="mt-6 flex flex-wrap items-center gap-2">
+              <TierBadge tier={review.tier} size="lg" />
               <span className="rounded-full border border-line bg-surface px-3 py-1 text-xs text-muted">
                 {review.cuisine}
               </span>
-              <span className="rounded-full border border-line bg-surface px-3 py-1 text-xs text-muted">
-                {review.price}
-              </span>
-              {review.draft && <DraftBadge />}
+              {review.price && (
+                <span className="rounded-full border border-line bg-surface px-3 py-1 text-xs text-muted">
+                  {review.price}
+                </span>
+              )}
+              {review.revisited && (
+                <span className="rounded-full border border-ember/30 bg-ember/10 px-3 py-1 text-xs text-ember">
+                  Been back
+                </span>
+              )}
+              {review.closed && (
+                <span className="rounded-full border border-line bg-surface px-3 py-1 text-xs text-muted">
+                  Permanently closed
+                </span>
+              )}
             </div>
 
             <h1 className="mt-5 font-display text-5xl leading-tight sm:text-6xl">
@@ -85,20 +102,29 @@ export default async function ReviewPage({ params }: Params) {
             </h1>
 
             <p className="mt-5 font-display text-2xl leading-snug text-muted">
-              &ldquo;{review.verdict}&rdquo;
+              {review.verdict}
             </p>
 
-            <div className="mt-8 flex flex-wrap items-center gap-x-10 gap-y-5 border-y border-line py-6">
-              <Rating value={review.rating} size="lg" />
+            <div className="mt-8 grid gap-5 border-y border-line py-6 sm:grid-cols-2">
               <div className="space-y-1 text-sm">
                 <p className="eyebrow">Visited</p>
                 <p>
-                  {formatDate(review.visitedAt)} · {formatTime(review.visitedAt)}
+                  {review.visitedAt ? (
+                    <>
+                      {formatDate(review.visitedAt)}
+                      {hasTime(review.visitedAt) &&
+                        ` · ${formatTime(review.visitedAt)}`}
+                    </>
+                  ) : (
+                    <span className="text-muted">Not recorded</span>
+                  )}
                 </p>
               </div>
               <div className="space-y-1 text-sm">
                 <p className="eyebrow">Where</p>
-                <p className="max-w-xs text-muted">{review.address}</p>
+                <p className="text-muted">
+                  {review.address ?? `${review.city} — address not logged`}
+                </p>
               </div>
             </div>
           </Reveal>
@@ -106,15 +132,28 @@ export default async function ReviewPage({ params }: Params) {
       </header>
 
       <div className="mx-auto mt-16 max-w-3xl space-y-16 px-6">
+        {/* ---- The diner's own words ---- */}
+        {review.quote && (
+          <Reveal>
+            <figure className="rounded-2xl border border-line bg-surface p-7">
+              <p className="eyebrow">In my own words</p>
+              <blockquote className="mt-4 font-display text-2xl leading-snug">
+                &ldquo;{review.quote}&rdquo;
+              </blockquote>
+              <figcaption className="mt-4 text-xs text-muted">
+                Verbatim from the verdict ledger.
+              </figcaption>
+            </figure>
+          </Reveal>
+        )}
+
         {/* ---- Body ---- */}
         <Reveal className="space-y-6">
           {review.body.map((p, i) => (
             <p
               key={i}
               className={`leading-[1.85] ${
-                i === 0
-                  ? "text-xl text-cream"
-                  : "text-[1.0625rem] text-cream/80"
+                i === 0 ? "text-xl text-cream" : "text-[1.0625rem] text-cream/80"
               }`}
             >
               {p}
@@ -123,23 +162,48 @@ export default async function ReviewPage({ params }: Params) {
         </Reveal>
 
         {/* ---- Dishes ---- */}
-        <Reveal className="space-y-4">
-          <p className="eyebrow">What we ordered</p>
-          <ul className="divide-y divide-line overflow-hidden rounded-2xl border border-line bg-surface">
-            {review.dishes.map((d) => (
-              <li key={d.name} className="px-6 py-5">
-                <p className="font-display text-xl">{d.name}</p>
-                <p className="mt-1 text-sm leading-relaxed text-muted">
-                  {d.note}
-                </p>
-              </li>
-            ))}
-          </ul>
-        </Reveal>
+        {review.dishes.length > 0 && (
+          <Reveal className="space-y-4">
+            <p className="eyebrow">Dishes worth noting</p>
+            <ul className="divide-y divide-line overflow-hidden rounded-2xl border border-line bg-surface">
+              {review.dishes.map((d) => (
+                <li key={d.name} className="px-6 py-5">
+                  <p className="font-display text-xl">{d.name}</p>
+                  <p className="mt-1 text-sm leading-relaxed text-muted">
+                    {d.note}
+                  </p>
+                </li>
+              ))}
+            </ul>
+          </Reveal>
+        )}
+
+        {/* ---- Open question ---- */}
+        {review.needsCheck && (
+          <Reveal>
+            <div className="rounded-2xl border border-dashed border-gold/30 bg-gold/[0.06] p-6">
+              <p className="eyebrow text-gold">Needs filling in</p>
+              <p className="mt-3 leading-relaxed text-cream/80">
+                {review.needsCheck}
+              </p>
+            </div>
+          </Reveal>
+        )}
 
         {/* ---- Photos ---- */}
         <Reveal>
           <Gallery slug={review.slug} name={review.name} />
+        </Reveal>
+
+        {/* ---- Verdict footer ---- */}
+        <Reveal>
+          <div className="rounded-2xl border border-line bg-surface px-6 py-5">
+            <p className="eyebrow">Verdict</p>
+            <div className="mt-3 flex flex-wrap items-center gap-4">
+              <TierBadge tier={review.tier} size="lg" />
+              <p className="text-sm text-muted">{TIERS[review.tier].blurb}</p>
+            </div>
+          </div>
         </Reveal>
 
         {/* ---- Tags ---- */}

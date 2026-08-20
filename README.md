@@ -19,9 +19,6 @@ Nothing else. No database, no image CDN, no serverless functions — every
 page is statically generated at build time, which is exactly what the
 Vercel free tier is best at.
 
-> **Node is not currently installed on this machine.** Get it from
-> <https://nodejs.org> (LTS), or `winget install OpenJS.NodeJS.LTS`.
-
 ---
 
 ## Running it locally
@@ -46,31 +43,47 @@ object in the `reviews` array and edit it:
   name: "Some Restaurant",
   city: "London",
   country: "UK",
-  address: "1 Example Street, London",
+  address: "1 Example Street, London",   // null if never logged
   cuisine: "Japanese",
-  visitedAt: "2026-09-01T19:30:00+01:00",
-  price: "£££",
-  rating: 8.5,                   // out of 10
+  visitedAt: "2026-09-01T19:30:00+01:00", // or "2026-09-01", or null
+  price: "£££",                  // or null
+  tier: "liked",                 // loved | liked | mixed | avoid | unlogged
+  quote: "What I actually said about it.",  // verbatim, or null
   verdict: "One line for the card.",
-  dishes: [{ name: "…", note: "…" }],
+  dishes: [{ name: "…", note: "…" }],       // only dishes you actually named
   body: ["Paragraph one.", "Paragraph two."],
   tags: ["dinner"],
-  draft: false,                  // true shows a "Draft" badge
+  revisited: true,               // optional — shows a "been back" marker
+  closed: true,                  // optional
+  needsCheck: "Open question",   // optional — renders a "needs filling in" box
 }
 ```
 
-The homepage stats, filters, city lists, sitemap and "more from this
-city" sections all derive from this array — nothing else to update.
+The homepage stats, tier counts, filters, city list, sitemap and "more
+from this city" sections all derive from this array.
 
-### About the `draft` flag
+### No scores out of ten
 
-**Every review currently in the file is `draft: true`.** The restaurants,
-dates, times and addresses are real (pulled from your Google Calendar
-bookings), but the prose, dish notes and ratings are placeholder text
-written to fill the design out. Rewrite each one in your own words and
-set `draft: false` to remove the badge.
+Verdicts are tiers, not numbers — `loved` / `liked` / `mixed` / `avoid` /
+`unlogged` — defined in [`lib/tiers.ts`](lib/tiers.ts). This is
+deliberate: the source ledger records whether a place was worth going
+back to, not a numeric rating, and inventing precision the source
+doesn't have would misrepresent it.
 
----
+### Where the content came from
+
+Seeded from the Verdict Ledger (`dining-project-brief.md` +
+`restaurant_verdicts_to_fill.csv`), cross-referenced against Google
+Calendar bookings and Gmail reservation history.
+
+- `quote` is **verbatim** — the diner's own words, lightly cleaned from
+  shorthand. Displayed on the review page under "In my own words".
+- `body` is written around that quote and adds **no** sensory detail the
+  ledger didn't contain.
+- `dishes` is only populated where a dish was actually named. Most
+  entries have an empty array, and that's correct.
+- Four entries are `tier: "unlogged"` — visited, never written up. They
+  carry a `needsCheck` note rather than invented copy.
 
 ## Adding photos
 
@@ -134,15 +147,16 @@ nameservers or add the CNAME Vercel shows you. HTTPS is automatic.
 ```
 app/
   layout.tsx           root shell, fonts, metadata
-  page.tsx             homepage — hero, stats, recent, leaderboard
+  page.tsx             homepage — hero, stats, loved, recent, avoid
   globals.css          theme tokens, grain, ambient glow
-  reviews/page.tsx     filterable archive
+  reviews/page.tsx     archive, filterable by city and verdict
   reviews/[slug]/      individual review (statically generated)
   wishlist/            places not yet visited
-  about/               scoring key
-components/            Nav, Hero, ReviewCard, ReviewGrid, Gallery, …
+  about/               verdict key + tier counts
+components/            Nav, Hero, ReviewCard, ReviewGrid, TierBadge, Gallery, …
 data/reviews.ts        ← all content lives here
 data/photos.json       generated — do not edit by hand
+lib/tiers.ts           verdict tiers and their colours
 lib/                   date formatting, photo lookup
 scripts/sync-photos.mjs
 public/photos/<slug>/  your images
@@ -155,6 +169,6 @@ public/photos/<slug>/  your images
 - Fraunces (display) + Inter (body) via `next/font`, self-hosted at build
   time so there's no layout shift and no Google request at runtime.
 - Motion: staggered scroll reveals, a shared-layout pill on the nav and
-  city filters, `layout` animations when the grid re-filters, and a
-  keyboard-navigable lightbox. All of it is disabled under
-  `prefers-reduced-motion`.
+  city filters, a keyed remount that replays the card stagger when the
+  grid re-filters, and a keyboard-navigable lightbox. All of it is
+  disabled under `prefers-reduced-motion`.

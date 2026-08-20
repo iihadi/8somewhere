@@ -12,7 +12,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
 
   const reviewRoutes = reviews.map((r) => ({
     url: `${BASE}/reviews/${r.slug}`,
-    lastModified: new Date(r.visitedAt),
+    lastModified: r.visitedAt ? new Date(r.visitedAt) : new Date(),
   }));
 
   return [...staticRoutes, ...reviewRoutes];

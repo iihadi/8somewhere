@@ -5,7 +5,7 @@ import Reveal from "@/components/Reveal";
 
 export const metadata: Metadata = {
   title: "Reviews",
-  description: "Every restaurant, sorted, filtered and rated out of ten.",
+  description: "Every restaurant, filtered by city and by verdict.",
 };
 
 export default function ReviewsPage() {
@@ -15,8 +15,8 @@ export default function ReviewsPage() {
         <p className="eyebrow">The archive</p>
         <h1 className="mt-3 font-display text-5xl sm:text-6xl">Every meal</h1>
         <p className="mt-4 max-w-xl text-muted">
-          Filter by city, search by cuisine or trip, sort by whatever you
-          feel like. Dates come straight off the booking.
+          Filter by city or by verdict, search by cuisine or trip. Dates
+          come off the original booking where there was one.
         </p>
       </Reveal>
 

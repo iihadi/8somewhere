@@ -1,14 +1,20 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { AnimatePresence, motion } from "framer-motion";
+import { motion } from "framer-motion";
 import type { Review } from "@/data/reviews";
+import { TIERS, TIER_ORDER, type Tier } from "@/lib/tiers";
 import ReviewCard from "./ReviewCard";
 
-type Sort = "recent" | "rating" | "name";
+type Sort = "recent" | "verdict" | "name";
+
+function sortKey(r: Review) {
+  return r.visitedAt ? +new Date(r.visitedAt) : -Infinity;
+}
 
 export default function ReviewGrid({ reviews }: { reviews: Review[] }) {
-  const [city, setCity] = useState<string>("All");
+  const [city, setCity] = useState("All");
+  const [tier, setTier] = useState<Tier | "All">("All");
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<Sort>("recent");
 
@@ -17,29 +23,40 @@ export default function ReviewGrid({ reviews }: { reviews: Review[] }) {
     [reviews]
   );
 
+  const tiersPresent = useMemo(
+    () => TIER_ORDER.filter((t) => reviews.some((r) => r.tier === t)),
+    [reviews]
+  );
+
   const shown = useMemo(() => {
     const q = query.trim().toLowerCase();
 
     const filtered = reviews.filter((r) => {
       if (city !== "All" && r.city !== city) return false;
+      if (tier !== "All" && r.tier !== tier) return false;
       if (!q) return true;
       return (
         r.name.toLowerCase().includes(q) ||
         r.cuisine.toLowerCase().includes(q) ||
+        r.verdict.toLowerCase().includes(q) ||
+        (r.quote ?? "").toLowerCase().includes(q) ||
         r.tags.some((t) => t.toLowerCase().includes(q))
       );
     });
 
     return filtered.sort((a, b) => {
-      if (sort === "rating") return b.rating - a.rating;
+      if (sort === "verdict")
+        return (
+          TIERS[a.tier].order - TIERS[b.tier].order || sortKey(b) - sortKey(a)
+        );
       if (sort === "name") return a.name.localeCompare(b.name);
-      return +new Date(b.visitedAt) - +new Date(a.visitedAt);
+      return sortKey(b) - sortKey(a);
     });
-  }, [reviews, city, query, sort]);
+  }, [reviews, city, tier, query, sort]);
 
   return (
     <div className="space-y-8">
-      <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+      <div className="space-y-4">
         <div className="flex flex-wrap gap-2">
           {cities.map((c) => (
             <button
@@ -61,39 +78,81 @@ export default function ReviewGrid({ reviews }: { reviews: Review[] }) {
           ))}
         </div>
 
-        <div className="flex gap-3">
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="Search dishes, cuisines, trips…"
-            className="w-full rounded-full border border-line bg-surface px-4 py-2 text-sm outline-none transition-colors placeholder:text-muted focus:border-ember/50 lg:w-64"
-          />
-          <select
-            value={sort}
-            onChange={(e) => setSort(e.target.value as Sort)}
-            className="rounded-full border border-line bg-surface px-4 py-2 text-sm outline-none transition-colors focus:border-ember/50"
-          >
-            <option value="recent">Most recent</option>
-            <option value="rating">Highest rated</option>
-            <option value="name">A–Z</option>
-          </select>
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => setTier("All")}
+              className={`rounded-full border px-3.5 py-1.5 text-xs uppercase tracking-wider transition-colors ${
+                tier === "All"
+                  ? "border-cream/40 text-cream"
+                  : "border-line text-muted hover:text-cream"
+              }`}
+            >
+              Every verdict
+            </button>
+            {tiersPresent.map((t) => {
+              const active = tier === t;
+              return (
+                <button
+                  key={t}
+                  onClick={() => setTier(t)}
+                  className="rounded-full border px-3.5 py-1.5 text-xs uppercase tracking-wider transition-colors"
+                  style={{
+                    color: active ? TIERS[t].accent : undefined,
+                    borderColor: active
+                      ? `color-mix(in oklab, ${TIERS[t].accent} 45%, transparent)`
+                      : undefined,
+                    backgroundColor: active
+                      ? `color-mix(in oklab, ${TIERS[t].accent} 12%, transparent)`
+                      : undefined,
+                  }}
+                >
+                  <span className={active ? "" : "text-muted"}>
+                    {TIERS[t].short}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          <div className="flex gap-3">
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="Search names, cuisines, trips…"
+              className="w-full rounded-full border border-line bg-surface px-4 py-2 text-sm outline-none transition-colors placeholder:text-muted focus:border-ember/50 lg:w-60"
+            />
+            <select
+              value={sort}
+              onChange={(e) => setSort(e.target.value as Sort)}
+              className="rounded-full border border-line bg-surface px-4 py-2 text-sm outline-none transition-colors focus:border-ember/50"
+            >
+              <option value="recent">Most recent</option>
+              <option value="verdict">By verdict</option>
+              <option value="name">A–Z</option>
+            </select>
+          </div>
         </div>
       </div>
 
       <p className="text-sm text-muted">
-        {shown.length} {shown.length === 1 ? "review" : "reviews"}
+        {shown.length} {shown.length === 1 ? "restaurant" : "restaurants"}
       </p>
 
-      <motion.div
-        layout
+      {/*
+        Keyed on the active filter so the whole grid remounts and the
+        cards replay their entrance stagger. Deliberately not
+        AnimatePresence + popLayout: exiting cards never finished their
+        exit transition there and accumulated in the DOM.
+      */}
+      <div
+        key={`${city}|${tier}|${sort}|${query}`}
         className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
       >
-        <AnimatePresence mode="popLayout">
-          {shown.map((r, i) => (
-            <ReviewCard key={r.slug} review={r} index={i} priority={i < 3} />
-          ))}
-        </AnimatePresence>
-      </motion.div>
+        {shown.map((r, i) => (
+          <ReviewCard key={r.slug} review={r} index={i} priority={i < 3} />
+        ))}
+      </div>
 
       {shown.length === 0 && (
         <div className="rounded-2xl border border-dashed border-line py-20 text-center">

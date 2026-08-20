@@ -1,10 +1,13 @@
 import type { Metadata } from "next";
-import { stats, cities } from "@/data/reviews";
+import Link from "next/link";
+import { stats, cities, tierCounts } from "@/data/reviews";
+import { TIERS, TIER_ORDER } from "@/lib/tiers";
 import Reveal from "@/components/Reveal";
+import TierBadge from "@/components/TierBadge";
 
 export const metadata: Metadata = {
   title: "About",
-  description: "What this site is and how the ratings work.",
+  description: "What this site is and how the verdicts work.",
 };
 
 export default function AboutPage() {
@@ -12,48 +15,75 @@ export default function AboutPage() {
     <div className="mx-auto max-w-2xl px-6 pt-20">
       <Reveal className="space-y-6">
         <p className="eyebrow">About</p>
-        <h1 className="font-display text-5xl sm:text-6xl">
-          Why this exists
-        </h1>
+        <h1 className="font-display text-5xl sm:text-6xl">Why this exists</h1>
 
         <p className="text-xl leading-[1.8]">
           I kept forgetting what I ate and where. This is the fix — every
-          restaurant booking that made it into my calendar, written up
-          properly, with photos and a number at the end.
+          restaurant worth logging, with the verdict I actually gave it at
+          the time rather than a score invented afterwards.
         </p>
 
         <p className="leading-[1.85] text-cream/80">
-          So far that&rsquo;s {stats.total} places across{" "}
-          {cities.join(", ")}. The average score is{" "}
-          {stats.average.toFixed(1)}, which is either evidence of good
-          taste or of grade inflation. Probably both.
+          {stats.total} places across {cities.join(", ")}. The whole thing
+          is graded against{" "}
+          <Link
+            href={`/reviews/${stats.benchmark.slug}`}
+            className="text-cream underline decoration-ember/40 underline-offset-4 transition-colors hover:decoration-ember"
+          >
+            {stats.benchmark.name}
+          </Link>
+          , which is the favourite and the fixed point everything else
+          moves relative to.
         </p>
       </Reveal>
 
       <Reveal delay={0.1} className="mt-16 space-y-4">
-        <p className="eyebrow">How the scoring works</p>
-        <dl className="divide-y divide-line overflow-hidden rounded-2xl border border-line bg-surface text-sm">
-          {[
-            ["9.0 – 10", "Would rearrange a weekend around it."],
-            ["8.0 – 8.9", "Excellent. Actively recommending it to people."],
-            ["7.0 – 7.9", "Good. Happy to go back if someone else picks."],
-            ["6.0 – 6.9", "Fine. Nothing wrong, nothing memorable."],
-            ["Below 6", "Something went wrong, and I’ll say what."],
-          ].map(([band, meaning]) => (
-            <div key={band} className="flex gap-6 px-6 py-4">
-              <dt className="w-24 shrink-0 font-display text-lg">{band}</dt>
-              <dd className="text-muted">{meaning}</dd>
-            </div>
+        <p className="eyebrow">How the verdicts work</p>
+        <p className="text-sm leading-relaxed text-muted">
+          No scores out of ten. A number would imply a precision I don&rsquo;t
+          have — what I actually know is whether I&rsquo;d go back.
+        </p>
+        <ul className="divide-y divide-line overflow-hidden rounded-2xl border border-line bg-surface">
+          {TIER_ORDER.map((t) => (
+            <li key={t} className="flex flex-wrap items-center gap-4 px-6 py-4">
+              <TierBadge tier={t} />
+              <span className="flex-1 text-sm text-muted">
+                {TIERS[t].blurb}
+              </span>
+              <span className="font-display text-lg">
+                {tierCounts[t] ?? 0}
+              </span>
+            </li>
           ))}
-        </dl>
+        </ul>
       </Reveal>
 
       <Reveal delay={0.15} className="mt-16 space-y-4">
+        <p className="eyebrow">What I actually like</p>
+        <p className="leading-[1.85] text-cream/80">
+          On paper my favourites are Japanese and French cooking. In
+          practice the top of this list is Thai, Korean, Filipino and
+          modern Asian — char, smoke, ferment, heat, depth. Tasting and set
+          menus are a comfort zone, and counter or chef&rsquo;s-table seating
+          is a habit rather than a rule.
+        </p>
+        <p className="leading-[1.85] text-cream/80">
+          The repeat visits cluster at the casual, bold-flavour end. Fine
+          dining tends to be a one-and-done collection exercise — which
+          shows up clearly in how few starred restaurants here are marked
+          &ldquo;been back&rdquo;.
+        </p>
+      </Reveal>
+
+      <Reveal delay={0.2} className="mt-16 space-y-4">
         <p className="eyebrow">The fine print</p>
         <p className="leading-[1.85] text-cream/80">
           Everything here is paid for out of my own pocket. Dates and
-          addresses are pulled from the original booking, so if a place has
-          moved since, the review reflects where it was on the night.
+          addresses come from the original booking where one exists, so if
+          a place has moved or closed since, the review reflects where it
+          was on the night. {stats.openQuestions} entries are still missing
+          a verdict — they&rsquo;re marked as such rather than quietly
+          filled in.
         </p>
       </Reveal>
     </div>

@@ -1,13 +1,15 @@
 import Link from "next/link";
-import { reviewsByDate, stats } from "@/data/reviews";
+import { reviews, reviewsByDate, stats } from "@/data/reviews";
 import ReviewCard from "@/components/ReviewCard";
 import Reveal from "@/components/Reveal";
 import Hero from "@/components/Hero";
+import TierBadge from "@/components/TierBadge";
 import { formatShortDate } from "@/lib/format";
 
 export default function Home() {
-  const recent = reviewsByDate.slice(0, 6);
-  const best = [...reviewsByDate].sort((a, b) => b.rating - a.rating).slice(0, 5);
+  const recent = reviewsByDate.filter((r) => r.visitedAt).slice(0, 6);
+  const loved = reviews.filter((r) => r.tier === "loved");
+  const avoid = reviews.filter((r) => r.tier === "avoid");
 
   return (
     <>
@@ -18,10 +20,10 @@ export default function Home() {
         <Reveal>
           <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-line bg-line sm:grid-cols-4">
             {[
-              { k: "Meals reviewed", v: stats.total },
+              { k: "Restaurants", v: stats.total },
               { k: "Cities", v: stats.cities },
-              { k: "Countries", v: stats.countries },
-              { k: "Average score", v: stats.average.toFixed(1) },
+              { k: "Benchmark tier", v: stats.loved },
+              { k: "Been back to", v: stats.repeats },
             ].map((s) => (
               <div key={s.k} className="bg-surface px-6 py-8">
                 <dd className="font-display text-4xl">{s.v}</dd>
@@ -30,6 +32,55 @@ export default function Home() {
             ))}
           </dl>
         </Reveal>
+      </section>
+
+      {/* ---- Benchmark tier ---- */}
+      <section className="mx-auto mt-28 max-w-6xl px-6">
+        <Reveal className="mb-10">
+          <p className="eyebrow">Benchmark tier</p>
+          <h2 className="mt-2 font-display text-4xl sm:text-5xl">
+            The ones I loved
+          </h2>
+          <p className="mt-4 max-w-xl text-muted">
+            Everything else gets measured against{" "}
+            <Link
+              href={`/reviews/${stats.benchmark.slug}`}
+              className="text-cream underline decoration-ember/40 underline-offset-4 transition-colors hover:decoration-ember"
+            >
+              {stats.benchmark.name}
+            </Link>
+            . These are the ones that came closest.
+          </p>
+        </Reveal>
+
+        <ol className="divide-y divide-line overflow-hidden rounded-2xl border border-line bg-surface">
+          {loved.map((r, i) => (
+            <Reveal key={r.slug} delay={i * 0.04}>
+              <li>
+                <Link
+                  href={`/reviews/${r.slug}`}
+                  className="group flex items-center gap-5 px-6 py-5 transition-colors hover:bg-surface-2"
+                >
+                  <span className="font-display text-2xl text-muted transition-colors group-hover:text-ember">
+                    {String(i + 1).padStart(2, "0")}
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate font-display text-xl">
+                      {r.name}
+                    </span>
+                    <span className="block truncate text-sm text-muted">
+                      {r.cuisine} · {r.city}
+                      {r.visitedAt && ` · ${formatShortDate(r.visitedAt)}`}
+                    </span>
+                  </span>
+                  <span className="hidden max-w-xs shrink-0 text-right text-sm text-muted lg:block">
+                    {r.verdict}
+                  </span>
+                </Link>
+              </li>
+            </Reveal>
+          ))}
+        </ol>
       </section>
 
       {/* ---- Recent ---- */}
@@ -58,42 +109,38 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ---- Leaderboard ---- */}
+      {/* ---- Avoid ---- */}
       <section className="mx-auto mt-28 max-w-6xl px-6">
         <Reveal className="mb-10">
-          <p className="eyebrow">The good ones</p>
+          <p className="eyebrow">For balance</p>
           <h2 className="mt-2 font-display text-4xl sm:text-5xl">
-            Highest rated
+            Wouldn&rsquo;t go back
           </h2>
         </Reveal>
 
-        <ol className="divide-y divide-line overflow-hidden rounded-2xl border border-line bg-surface">
-          {best.map((r, i) => (
-            <Reveal key={r.slug} delay={i * 0.05}>
+        <ul className="divide-y divide-line overflow-hidden rounded-2xl border border-line bg-surface">
+          {avoid.map((r, i) => (
+            <Reveal key={r.slug} delay={i * 0.04}>
               <li>
                 <Link
                   href={`/reviews/${r.slug}`}
-                  className="group flex items-center gap-5 px-6 py-5 transition-colors hover:bg-surface-2"
+                  className="flex flex-wrap items-baseline gap-x-4 gap-y-2 px-6 py-5 transition-colors hover:bg-surface-2"
                 >
-                  <span className="font-display text-2xl text-muted transition-colors group-hover:text-ember">
-                    {String(i + 1).padStart(2, "0")}
-                  </span>
-                  <span className="min-w-0 flex-1">
-                    <span className="block truncate font-display text-xl">
-                      {r.name}
+                  <span className="font-display text-xl">{r.name}</span>
+                  {r.closed && (
+                    <span className="text-xs uppercase tracking-wider text-muted">
+                      now closed
                     </span>
-                    <span className="block truncate text-sm text-muted">
-                      {r.cuisine} · {r.city} · {formatShortDate(r.visitedAt)}
-                    </span>
+                  )}
+                  <span className="w-full text-sm text-muted sm:w-auto sm:flex-1">
+                    {r.verdict}
                   </span>
-                  <span className="font-display text-2xl">
-                    {r.rating.toFixed(1)}
-                  </span>
+                  <TierBadge tier={r.tier} size="sm" />
                 </Link>
               </li>
             </Reveal>
           ))}
-        </ol>
+        </ul>
       </section>
     </>
   );

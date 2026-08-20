@@ -92,9 +92,9 @@ export default function Hero() {
           transition={{ duration: 0.8, delay: 0.5, ease: [0.16, 1, 0.3, 1] }}
           className="mt-8 max-w-xl text-lg leading-relaxed text-muted"
         >
-          {stats.total} restaurants, {stats.cities} cities, one increasingly
-          unmanageable calendar. Honest write-ups, too many photos of
-          dumplings, and a running list of where to go next.
+          {stats.total} restaurants across {stats.cities} cities, ranked by
+          whether I&rsquo;d actually go back. Every verdict here is mine,
+          quoted as I wrote it down at the time.
         </motion.p>
 
         <motion.div
@@ -110,10 +110,10 @@ export default function Hero() {
             Read the reviews
           </Link>
           <Link
-            href={`/reviews/${stats.top.slug}`}
+            href={`/reviews/${stats.benchmark.slug}`}
             className="rounded-full border border-line px-6 py-3 text-sm text-muted transition-colors hover:border-ember/50 hover:text-cream"
           >
-            Best of the lot: {stats.top.name}
+            The benchmark: {stats.benchmark.name}
           </Link>
         </motion.div>
       </div>
