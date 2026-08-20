@@ -1,10 +1,16 @@
 import "server-only";
+import { cache } from "react";
 import type { Review } from "@/data/seed-reviews";
 import { readReviewsData, writeReviewsData } from "./storage";
 
-export async function getAllReviews(): Promise<Review[]> {
+/**
+ * Wrapped in React's `cache` so the store is read once per request
+ * rather than once per caller — the site layout, the page and
+ * generateMetadata all need the same data on every render.
+ */
+export const getAllReviews = cache(async (): Promise<Review[]> => {
   return readReviewsData();
-}
+});
 
 export async function getReview(slug: string): Promise<Review | undefined> {
   const all = await getAllReviews();

@@ -43,6 +43,26 @@ on first request.
 
 ---
 
+## The public site
+
+| Page | What's on it |
+| --- | --- |
+| `/` | Hero, headline stats, "on this day" throwback, three-star list, recent meals, zero-star list |
+| `/reviews` | The full archive, filterable by city and rating, searchable |
+| `/reviews/<slug>` | One review — verdict, your verbatim quote, write-up, dishes, photos, map |
+| `/map` | Every pinned restaurant on one Leaflet/OpenStreetMap map, pins coloured and numbered by rating |
+| `/cuisines` | Grouped by what each place actually cooks, most-visited first |
+| `/stats` | Rating spread, price spread, meals per year, cuisine and city breakdowns |
+| `/wishlist` | Booked or planned, not yet visited |
+| `/about` | Why the site exists and how the scoring works |
+| `/feed.xml` | RSS feed of the 50 most recent reviews |
+
+Every review also generates its own social share card at
+`opengraph-image` — a 1200×630 PNG with the name, stars, verdict and
+location, rendered on demand by `next/og`. No image files to maintain.
+
+---
+
 ## Editing reviews — `/edit`
 
 Sign in at `/edit/login` with `ADMIN_USERNAME` / `ADMIN_PASSWORD`. From
@@ -52,8 +72,10 @@ there:
 - **`/edit/new`** — add a restaurant. The slug auto-fills from the name
   (editable before saving; fixed afterwards, since the URL depends on it).
 - **`/edit/<slug>`** — edit any field, including the 0–3 star rating,
-  write-up paragraphs, named dishes, tags, photos (drag a file in, it
-  uploads immediately and appears as a thumbnail), and location.
+  write-up paragraphs, named dishes, tags, location, and photos. Photos
+  upload as soon as you pick them; each one takes an optional caption
+  (which doubles as its alt text) and can be reordered with ← →. The
+  first photo is the cover used on cards and at the top of the review.
 
 Saves take effect immediately — every public page reads live data on
 each request, so there's no rebuild or cache to wait on. Deleting a
@@ -104,6 +126,12 @@ recent, oldest, rating, name, or "needs attention first".
 
 "Needs attention" means `tier: "unlogged"` or a `needsCheck` note is
 set — the same signal the public About page's open-questions count uses.
+
+**Export** buttons in the dashboard header download the whole
+collection as JSON (a faithful backup you could re-seed from) or CSV
+(opens in Excel/Sheets — UTF-8 BOM included so `£` and accents survive).
+Worth doing occasionally: once deployed, your content lives in Vercel
+Blob rather than in the repo.
 
 ### Adding a review by hand instead
 
@@ -212,8 +240,13 @@ app/
     page.tsx                homepage
     reviews/page.tsx         archive, filterable by city and rating
     reviews/[slug]/           individual review
+      opengraph-image.tsx      per-review social share card (next/og)
+    map/                     all pinned restaurants on one Leaflet map
+    cuisines/                grouped by kind of cooking
+    stats/                   ratings, prices, years, cuisines, cities
     wishlist/                places not yet visited (static, not editable)
     about/                    scoring key + tier counts
+  feed.xml/route.ts         RSS feed
   edit/                    the admin UI — outside the (site) group
     layout.tsx              minimal edit-mode header
     loading.tsx              same loading state, edit-mode copy
@@ -225,8 +258,9 @@ app/
     auth/route.ts             login / logout
     reviews/route.ts           create
     reviews/[slug]/route.ts     update / delete
-    upload/route.ts            photo upload / delete
+    upload/route.ts            photo upload / delete (converts HEIC)
     geocode/route.ts           OpenStreetMap address search proxy
+    export/route.ts            JSON / CSV backup download
   icon.png, apple-icon.png  favicon, from the hand-drawn mark
   sitemap.ts, robots.ts
 middleware.ts             guards /edit/* and /api/edit/*
@@ -234,13 +268,15 @@ lib/
   auth.ts                  signed session cookies (Web Crypto)
   storage.ts               Blob-or-local persistence, chosen by env
   repo.ts                  review CRUD on top of storage.ts
-  derive.ts                stats/sorting/filtering, computed at request time
+  derive.ts                stats/sorting/grouping, computed at request time
   tiers.ts                 verdict tiers and their star counts
   image-size.ts             dependency-free JPEG/PNG/WebP/GIF dimension reader
   photos.ts, format.ts
 components/
   edit/                    ReviewForm, DashboardTable, LogoutButton, DeleteReviewButton
   Brand.tsx                the site name, "somewhere" always italic
+  MapView.tsx              Leaflet map (client-only; loads leaflet in an effect)
+  BarRow.tsx               one bar in a stats breakdown
   LoadingScreen.tsx, Spinner.tsx
   Nav, Hero, ReviewCard, ReviewGrid, Stars, TierBadge, Gallery, …
 data/

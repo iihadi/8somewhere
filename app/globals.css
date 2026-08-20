@@ -92,3 +92,62 @@ body::after {
   text-transform: uppercase;
   color: var(--color-muted);
 }
+
+/* ------------------------------------------------------------------ */
+/* Leaflet (map page) — Leaflet ships light-theme chrome by default,   */
+/* so the popup, controls and attribution are restyled to match.       */
+/* ------------------------------------------------------------------ */
+
+.leaflet-container {
+  background: var(--color-surface);
+  font-family: var(--font-sans);
+}
+
+/* OSM tiles are bright; knock them back so pins and UI stay readable. */
+.leaflet-tile-pane {
+  filter: grayscale(35%) brightness(0.72) contrast(1.05);
+}
+
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip {
+  background: var(--color-surface-2);
+  color: var(--color-cream);
+  border: 1px solid var(--color-line);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+}
+
+.leaflet-popup-content {
+  margin: 0.75rem 1rem;
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.leaflet-popup-content a {
+  color: var(--color-ember);
+}
+
+.leaflet-container a.leaflet-popup-close-button {
+  color: var(--color-muted);
+}
+.leaflet-container a.leaflet-popup-close-button:hover {
+  color: var(--color-cream);
+}
+
+.leaflet-bar a,
+.leaflet-bar a:hover {
+  background: var(--color-surface-2);
+  color: var(--color-cream);
+  border-bottom-color: var(--color-line);
+}
+.leaflet-bar a:hover {
+  background: var(--color-line);
+}
+
+.leaflet-control-attribution {
+  background: rgba(14, 14, 18, 0.85) !important;
+  color: var(--color-muted);
+  font-size: 0.65rem;
+}
+.leaflet-control-attribution a {
+  color: var(--color-muted);
+}

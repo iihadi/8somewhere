@@ -211,6 +211,24 @@ export default function ReviewForm({
     }).catch(() => {});
   }
 
+  /** Move a photo one slot left/right. Position 0 is the cover image. */
+  function movePhoto(i: number, dir: -1 | 1) {
+    const next = [...fields.photos!];
+    const j = i + dir;
+    if (j < 0 || j >= next.length) return;
+    [next[i], next[j]] = [next[j], next[i]];
+    set("photos", next);
+  }
+
+  function setCaption(i: number, caption: string) {
+    set(
+      "photos",
+      fields.photos!.map((p, idx) =>
+        idx === i ? { ...p, caption: caption || undefined } : p
+      )
+    );
+  }
+
   // ---- save / delete ----
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -585,28 +603,74 @@ export default function ReviewForm({
           </p>
         )}
 
-        <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
+        {fields.photos!.length > 0 && (
+          <p className="text-xs text-muted">
+            The first photo is the cover. Use ← → to reorder; captions are
+            optional and double as the image&rsquo;s alt text.
+          </p>
+        )}
+
+        <div className="grid gap-4 sm:grid-cols-2">
           {fields.photos!.map((p, i) => (
-            <div key={p.url} className="group relative aspect-square overflow-hidden rounded-lg border border-line">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={p.url} alt="" className="h-full w-full object-cover" />
-              <button
-                type="button"
-                onClick={() => removePhoto(i)}
-                className="absolute right-1.5 top-1.5 rounded-full bg-ink/80 px-2 py-1 text-xs text-cream opacity-0 transition-opacity group-hover:opacity-100"
-              >
-                Remove
-              </button>
-              {i === 0 && (
-                <span className="absolute bottom-1.5 left-1.5 rounded-full bg-ink/80 px-2 py-0.5 text-[0.6rem] uppercase tracking-wider text-muted">
-                  Cover
-                </span>
-              )}
+            <div
+              key={p.url}
+              className="space-y-2 rounded-lg border border-line p-2"
+            >
+              <div className="group relative aspect-[4/3] overflow-hidden rounded-md">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={p.url}
+                  alt={p.caption || ""}
+                  className="h-full w-full object-cover"
+                />
+
+                <button
+                  type="button"
+                  onClick={() => removePhoto(i)}
+                  className="absolute right-1.5 top-1.5 rounded-full bg-ink/85 px-2.5 py-1 text-xs text-cream opacity-0 transition-opacity group-hover:opacity-100"
+                >
+                  Remove
+                </button>
+
+                {i === 0 && (
+                  <span className="absolute left-1.5 top-1.5 rounded-full bg-ink/85 px-2 py-0.5 text-[0.6rem] uppercase tracking-wider text-ember">
+                    Cover
+                  </span>
+                )}
+
+                <div className="absolute bottom-1.5 left-1.5 flex gap-1">
+                  <button
+                    type="button"
+                    onClick={() => movePhoto(i, -1)}
+                    disabled={i === 0}
+                    aria-label="Move photo earlier"
+                    className="rounded-full bg-ink/85 px-2 py-1 text-xs text-cream disabled:opacity-30"
+                  >
+                    ←
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => movePhoto(i, 1)}
+                    disabled={i === fields.photos!.length - 1}
+                    aria-label="Move photo later"
+                    className="rounded-full bg-ink/85 px-2 py-1 text-xs text-cream disabled:opacity-30"
+                  >
+                    →
+                  </button>
+                </div>
+              </div>
+
+              <input
+                className={inputCls}
+                value={p.caption ?? ""}
+                onChange={(e) => setCaption(i, e.target.value)}
+                placeholder="Caption (optional)"
+              />
             </div>
           ))}
 
           <label
-            className={`flex aspect-square cursor-pointer flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-line text-center text-xs text-muted transition-colors hover:border-ember/40 hover:text-cream ${
+            className={`flex aspect-[4/3] cursor-pointer flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-line text-center text-xs text-muted transition-colors hover:border-ember/40 hover:text-cream ${
               !SLUG_RE.test(slug) ? "pointer-events-none opacity-40" : ""
             }`}
           >

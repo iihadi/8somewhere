@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getAllReviews } from "@/lib/repo";
-import { getStats, sortByDate } from "@/lib/derive";
+import { getStats, onThisDay, sortByDate } from "@/lib/derive";
 import ReviewCard from "@/components/ReviewCard";
 import Reveal from "@/components/Reveal";
 import Hero from "@/components/Hero";
@@ -8,6 +8,13 @@ import TierBadge from "@/components/TierBadge";
 import { formatShortDate } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
+
+/** "3 years ago today", from the raw ISO year — no timezone involved. */
+function yearsAgo(iso: string) {
+  const diff = new Date().getFullYear() - Number(iso.slice(0, 4));
+  if (diff <= 0) return "earlier this year";
+  return `${diff} year${diff === 1 ? "" : "s"} ago today`;
+}
 
 export default async function Home() {
   const reviews = await getAllReviews();
@@ -17,6 +24,7 @@ export default async function Home() {
     .slice(0, 6);
   const loved = reviews.filter((r) => r.tier === "loved");
   const avoid = reviews.filter((r) => r.tier === "avoid");
+  const throwback = onThisDay(reviews);
 
   return (
     <>
@@ -40,6 +48,37 @@ export default async function Home() {
           </dl>
         </Reveal>
       </section>
+
+      {/* ---- On this day ---- */}
+      {throwback.length > 0 && (
+        <section className="mx-auto mt-20 max-w-6xl px-6">
+          <Reveal>
+            <div className="rounded-2xl border border-ember/25 bg-ember/[0.05] p-6 sm:p-8">
+              <p className="eyebrow text-ember">On this day</p>
+              <ul className="mt-4 space-y-4">
+                {throwback.map((r) => (
+                  <li key={r.slug}>
+                    <Link
+                      href={`/reviews/${r.slug}`}
+                      className="group flex flex-wrap items-baseline gap-x-3 gap-y-1"
+                    >
+                      <span className="font-display text-2xl transition-colors group-hover:text-ember">
+                        {r.name}
+                      </span>
+                      <span className="text-sm text-muted">
+                        {yearsAgo(r.visitedAt!)} · {r.city}
+                      </span>
+                      <span className="w-full text-sm text-muted">
+                        {r.verdict}
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </Reveal>
+        </section>
+      )}
 
       {/* ---- Three stars ---- */}
       {loved.length > 0 && (

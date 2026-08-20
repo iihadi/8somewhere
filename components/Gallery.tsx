@@ -90,11 +90,16 @@ export default function Gallery({
           >
             <Image
               src={p.url}
-              alt={`${name} — photo ${i + 1}`}
+              alt={p.caption || `${name} — photo ${i + 1}`}
               fill
               sizes="(max-width: 768px) 100vw, 33vw"
               className="object-cover transition-transform duration-700 group-hover:scale-105"
             />
+            {p.caption && (
+              <span className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-ink/90 to-transparent p-3 pt-8 text-left text-xs leading-snug text-cream opacity-0 transition-opacity duration-300 group-hover:opacity-100">
+                {p.caption}
+              </span>
+            )}
           </motion.button>
         ))}
       </div>
@@ -119,11 +124,16 @@ export default function Gallery({
             >
               <Image
                 src={photos[open].url}
-                alt={`${name} — photo ${open + 1}`}
+                alt={photos[open].caption || `${name} — photo ${open + 1}`}
                 width={photos[open].width}
                 height={photos[open].height}
-                className="max-h-[85vh] w-full rounded-xl object-contain"
+                className="max-h-[78vh] w-full rounded-xl object-contain"
               />
+              {photos[open].caption && (
+                <p className="mx-auto mt-4 max-w-2xl text-center text-sm leading-relaxed text-muted">
+                  {photos[open].caption}
+                </p>
+              )}
             </motion.div>
 
             <div className="absolute inset-x-0 bottom-8 flex items-center justify-center gap-6 text-sm text-muted">

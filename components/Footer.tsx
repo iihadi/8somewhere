@@ -18,9 +18,18 @@ export default function Footer({
             calendar I should probably clean up.
           </p>
         </div>
-        <div className="flex gap-6 text-sm text-muted">
+        <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted">
           <Link href="/reviews" className="hover:text-cream transition-colors">
             Reviews
+          </Link>
+          <Link href="/map" className="hover:text-cream transition-colors">
+            Map
+          </Link>
+          <Link href="/cuisines" className="hover:text-cream transition-colors">
+            Cuisines
+          </Link>
+          <Link href="/stats" className="hover:text-cream transition-colors">
+            Stats
           </Link>
           <Link href="/wishlist" className="hover:text-cream transition-colors">
             Wishlist
@@ -28,6 +37,9 @@ export default function Footer({
           <Link href="/about" className="hover:text-cream transition-colors">
             About
           </Link>
+          <a href="/feed.xml" className="hover:text-cream transition-colors">
+            RSS
+          </a>
         </div>
       </div>
     </footer>

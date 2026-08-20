@@ -9,6 +9,9 @@ import Brand from "@/components/Brand";
 
 const links = [
   { href: "/reviews", label: "Reviews" },
+  { href: "/map", label: "Map" },
+  { href: "/cuisines", label: "Cuisines" },
+  { href: "/stats", label: "Stats" },
   { href: "/wishlist", label: "Wishlist" },
   { href: "/about", label: "About" },
 ];
@@ -31,7 +34,7 @@ export default function Nav() {
           : "border-b border-transparent"
       }`}
     >
-      <nav className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
+      <nav className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-x-6 gap-y-2 px-6 py-4">
         <Link href="/" className="group flex items-center gap-2.5">
           <span className="grid h-9 w-9 place-items-center rounded-full bg-surface-2 ring-1 ring-line transition-transform duration-500 group-hover:rotate-12">
             <Image
@@ -45,7 +48,7 @@ export default function Nav() {
           <Brand className="font-display text-lg tracking-tight" />
         </Link>
 
-        <ul className="flex items-center gap-1 text-sm">
+        <ul className="flex flex-wrap items-center gap-1 text-sm">
           {links.map((l) => {
             const active = pathname.startsWith(l.href);
             return (

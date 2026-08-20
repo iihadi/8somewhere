@@ -29,6 +29,9 @@ export const metadata: Metadata = {
     title: "8somewhere — restaurant reviews",
     description: "Every restaurant I've eaten at, written up honestly.",
   },
+  alternates: {
+    types: { "application/rss+xml": "/feed.xml" },
+  },
 };
 
 export default function RootLayout({

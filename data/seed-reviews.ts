@@ -9,6 +9,8 @@ export type Photo = {
   url: string;
   width: number;
   height: number;
+  /** Shown under the photo in the lightbox, and used as its alt text. */
+  caption?: string;
 };
 
 export type Review = {

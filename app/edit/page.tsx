@@ -18,7 +18,19 @@ export default async function EditDashboard() {
             {reviews.length} restaurants
           </h1>
         </div>
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          <a
+            href="/api/edit/export?format=json"
+            className="rounded-full border border-line px-4 py-2 text-sm text-muted transition-colors hover:text-cream"
+          >
+            Export JSON
+          </a>
+          <a
+            href="/api/edit/export?format=csv"
+            className="rounded-full border border-line px-4 py-2 text-sm text-muted transition-colors hover:text-cream"
+          >
+            Export CSV
+          </a>
           <Link
             href="/edit/new"
             className="rounded-full bg-cream px-5 py-2.5 text-sm font-medium text-ink"
