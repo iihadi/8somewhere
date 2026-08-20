@@ -38,10 +38,13 @@ export default function AboutPage() {
       </Reveal>
 
       <Reveal delay={0.1} className="mt-16 space-y-4">
-        <p className="eyebrow">How the verdicts work</p>
+        <p className="eyebrow">How the scoring works</p>
         <p className="text-sm leading-relaxed text-muted">
-          No scores out of ten. A number would imply a precision I don&rsquo;t
-          have — what I actually know is whether I&rsquo;d go back.
+          Zero to three stars, Michelin-style, rather than out of ten — a
+          finer scale would imply a precision I don&rsquo;t actually have.
+          Zero stars still means it was rated, just badly; &ldquo;not yet
+          rated&rdquo; is a separate, honest state for the handful of
+          places I visited but never wrote a verdict for.
         </p>
         <ul className="divide-y divide-line overflow-hidden rounded-2xl border border-line bg-surface">
           {TIER_ORDER.map((t) => (

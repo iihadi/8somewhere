@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import type { Review } from "@/data/reviews";
 import { TIERS, TIER_ORDER, type Tier } from "@/lib/tiers";
 import ReviewCard from "./ReviewCard";
+import Stars from "./Stars";
 
 type Sort = "recent" | "verdict" | "name";
 
@@ -88,7 +89,7 @@ export default function ReviewGrid({ reviews }: { reviews: Review[] }) {
                   : "border-line text-muted hover:text-cream"
               }`}
             >
-              Every verdict
+              All ratings
             </button>
             {tiersPresent.map((t) => {
               const active = tier === t;
@@ -107,8 +108,8 @@ export default function ReviewGrid({ reviews }: { reviews: Review[] }) {
                       : undefined,
                   }}
                 >
-                  <span className={active ? "" : "text-muted"}>
-                    {TIERS[t].short}
+                  <span className={active ? "" : "opacity-70"}>
+                    <Stars tier={t} size="sm" />
                   </span>
                 </button>
               );
@@ -128,7 +129,7 @@ export default function ReviewGrid({ reviews }: { reviews: Review[] }) {
               className="rounded-full border border-line bg-surface px-4 py-2 text-sm outline-none transition-colors focus:border-ember/50"
             >
               <option value="recent">Most recent</option>
-              <option value="verdict">By verdict</option>
+              <option value="verdict">By rating</option>
               <option value="name">A–Z</option>
             </select>
           </div>

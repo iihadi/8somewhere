@@ -65,7 +65,7 @@ export default function Hero() {
         </motion.p>
 
         <h1 className="mt-6 font-display text-6xl leading-[0.95] tracking-tight sm:text-8xl">
-          {["Ate", "Somewhere"].map((word, i) => (
+          {["8", "somewhere"].map((word, i) => (
             <span key={word} className="block overflow-hidden">
               <motion.span
                 custom={i}
@@ -74,7 +74,7 @@ export default function Hero() {
                 animate="show"
                 className="block"
               >
-                {i === 1 ? (
+                {i === 0 ? (
                   <span className="bg-gradient-to-r from-ember to-gold bg-clip-text text-transparent">
                     {word}
                   </span>

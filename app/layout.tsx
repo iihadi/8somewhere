@@ -19,14 +19,14 @@ const fraunces = Fraunces({
 export const metadata: Metadata = {
   metadataBase: new URL("https://example.vercel.app"),
   title: {
-    default: "Ate Somewhere — restaurant reviews",
-    template: "%s — Ate Somewhere",
+    default: "8somewhere — restaurant reviews",
+    template: "%s — 8somewhere",
   },
   description:
     "Every restaurant I've eaten at, written up honestly. London, Paris, New York and wherever else.",
   openGraph: {
     type: "website",
-    title: "Ate Somewhere — restaurant reviews",
+    title: "8somewhere — restaurant reviews",
     description:
       "Every restaurant I've eaten at, written up honestly.",
   },

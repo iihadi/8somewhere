@@ -22,7 +22,7 @@ export default function Home() {
             {[
               { k: "Restaurants", v: stats.total },
               { k: "Cities", v: stats.cities },
-              { k: "Benchmark tier", v: stats.loved },
+              { k: "Three stars", v: stats.loved },
               { k: "Been back to", v: stats.repeats },
             ].map((s) => (
               <div key={s.k} className="bg-surface px-6 py-8">
@@ -34,12 +34,12 @@ export default function Home() {
         </Reveal>
       </section>
 
-      {/* ---- Benchmark tier ---- */}
+      {/* ---- Three stars ---- */}
       <section className="mx-auto mt-28 max-w-6xl px-6">
         <Reveal className="mb-10">
-          <p className="eyebrow">Benchmark tier</p>
+          <p className="eyebrow">★ ★ ★</p>
           <h2 className="mt-2 font-display text-4xl sm:text-5xl">
-            The ones I loved
+            Three stars
           </h2>
           <p className="mt-4 max-w-xl text-muted">
             Everything else gets measured against{" "}
@@ -109,12 +109,12 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ---- Avoid ---- */}
+      {/* ---- Zero stars ---- */}
       <section className="mx-auto mt-28 max-w-6xl px-6">
         <Reveal className="mb-10">
           <p className="eyebrow">For balance</p>
           <h2 className="mt-2 font-display text-4xl sm:text-5xl">
-            Wouldn&rsquo;t go back
+            Zero stars
           </h2>
         </Reveal>
 

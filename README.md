@@ -1,4 +1,4 @@
-# Ate Somewhere
+# 8somewhere
 
 A dark-mode restaurant review blog. Next.js 15 (App Router) · TypeScript ·
 Tailwind v4 · Framer Motion. No database, no CMS — reviews live in one
@@ -62,13 +62,17 @@ object in the `reviews` array and edit it:
 The homepage stats, tier counts, filters, city list, sitemap and "more
 from this city" sections all derive from this array.
 
-### No scores out of ten
+### 0–3 stars, Michelin-style
 
-Verdicts are tiers, not numbers — `loved` / `liked` / `mixed` / `avoid` /
-`unlogged` — defined in [`lib/tiers.ts`](lib/tiers.ts). This is
-deliberate: the source ledger records whether a place was worth going
-back to, not a numeric rating, and inventing precision the source
-doesn't have would misrepresent it.
+Verdicts are internally five tiers — `loved` / `liked` / `mixed` /
+`avoid` / `unlogged` — defined in [`lib/tiers.ts`](lib/tiers.ts), which
+map to a 0–3 star display via the `stars` field on each tier:
+`loved` → ★★★, `liked` → ★★, `mixed` → ★, `avoid` → 0 stars.
+
+`unlogged` is not the same as zero stars — it renders "Not yet rated"
+rather than an empty star row, because it's an absence of a verdict,
+not a negative one. Keep that distinction when adding entries: only use
+`avoid` if a verdict was actually given.
 
 ### Where the content came from
 
@@ -147,18 +151,21 @@ nameservers or add the CNAME Vercel shows you. HTTPS is automatic.
 ```
 app/
   layout.tsx           root shell, fonts, metadata
-  page.tsx             homepage — hero, stats, loved, recent, avoid
+  icon.png              favicon (from the hand-drawn mark)
+  apple-icon.png         iOS home-screen icon
+  page.tsx             homepage — hero, stats, three stars, recent, zero stars
   globals.css          theme tokens, grain, ambient glow
-  reviews/page.tsx     archive, filterable by city and verdict
+  reviews/page.tsx     archive, filterable by city and rating
   reviews/[slug]/      individual review (statically generated)
   wishlist/            places not yet visited
-  about/               verdict key + tier counts
-components/            Nav, Hero, ReviewCard, ReviewGrid, TierBadge, Gallery, …
+  about/               scoring key + tier counts
+components/            Nav, Hero, ReviewCard, ReviewGrid, Stars, TierBadge, Gallery, …
 data/reviews.ts        ← all content lives here
 data/photos.json       generated — do not edit by hand
-lib/tiers.ts           verdict tiers and their colours
+lib/tiers.ts           verdict tiers, their star counts and colours
 lib/                   date formatting, photo lookup
 scripts/sync-photos.mjs
+public/logo-mark.png   the hand-drawn mark, used in the nav
 public/photos/<slug>/  your images
 ```
 

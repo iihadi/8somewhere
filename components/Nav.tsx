@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, useScroll, useMotionValueEvent } from "framer-motion";
 import { useState } from "react";
+import Image from "next/image";
 
 const links = [
   { href: "/reviews", label: "Reviews" },
@@ -31,11 +32,17 @@ export default function Nav() {
     >
       <nav className="mx-auto flex max-w-6xl items-center justify-between px-6 py-4">
         <Link href="/" className="group flex items-center gap-2.5">
-          <span className="grid h-8 w-8 place-items-center rounded-full bg-ember text-ink font-display text-lg leading-none transition-transform duration-500 group-hover:rotate-12">
-            a
+          <span className="grid h-9 w-9 place-items-center rounded-full bg-surface-2 ring-1 ring-line transition-transform duration-500 group-hover:rotate-12">
+            <Image
+              src="/logo-mark.png"
+              alt=""
+              width={28}
+              height={27}
+              className="opacity-90"
+            />
           </span>
           <span className="font-display text-lg tracking-tight">
-            Ate Somewhere
+            8somewhere
           </span>
         </Link>
 
