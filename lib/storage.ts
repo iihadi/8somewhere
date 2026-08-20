@@ -1,5 +1,5 @@
 import "server-only";
-import { head, put, del } from "@vercel/blob";
+import { head, put, del, BlobNotFoundError } from "@vercel/blob";
 import { mkdir, readFile, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { seedReviews, type Review } from "@/data/seed-reviews";
@@ -32,38 +32,50 @@ function useBlob() {
 
 export async function readReviewsData(): Promise<Review[]> {
   if (useBlob()) {
+    let meta;
     try {
-      const meta = await head(REVIEWS_BLOB_PATH, { token: blobToken() });
-      const res = await fetch(meta.url, { cache: "no-store" });
-      if (!res.ok) throw new Error(`blob fetch failed: ${res.status}`);
-      return (await res.json()) as Review[];
-    } catch {
-      // No blob yet (fresh project) — bootstrap from the seed data.
-      await writeReviewsData(seedReviews);
-      return seedReviews;
+      meta = await head(REVIEWS_BLOB_PATH, { token: blobToken() });
+    } catch (err) {
+      if (err instanceof BlobNotFoundError) {
+        // Genuinely no data yet (fresh project) — bootstrap from seed.
+        await writeReviewsData(seedReviews);
+        return seedReviews;
+      }
+      // Any other failure (network blip, rate limit, etc.) must NOT be
+      // treated as "no data" — that previously caused a transient error
+      // to silently wipe live review data back to the seed. Let it
+      // propagate instead.
+      throw err;
     }
+
+    const res = await fetch(meta.url, { cache: "no-store" });
+    if (!res.ok) {
+      throw new Error(`Failed to fetch reviews blob: ${res.status}`);
+    }
+    return (await res.json()) as Review[];
   }
 
   try {
     const raw = await readFile(LOCAL_DATA_PATH, "utf8");
     return JSON.parse(raw) as Review[];
-  } catch {
-    await writeReviewsData(seedReviews);
-    return seedReviews;
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code === "ENOENT") {
+      await writeReviewsData(seedReviews);
+      return seedReviews;
+    }
+    throw err;
   }
 }
 
 export async function writeReviewsData(reviews: Review[]): Promise<void> {
   if (useBlob()) {
-    // Vercel Blob has no built-in "overwrite this path" primitive we can
-    // rely on across SDK versions, so delete-then-write instead of
-    // trusting an addRandomSuffix:false put to replace in place.
-    try {
-      const meta = await head(REVIEWS_BLOB_PATH, { token: blobToken() });
-      await del(meta.url, { token: blobToken() });
-    } catch {
-      /* nothing to delete yet */
-    }
+    // `put()` with addRandomSuffix:false overwrites the existing blob at
+    // this path in place — verified empirically, no delete-first dance
+    // needed. A prior version of this function deleted the old blob
+    // before writing the new one, which opened a window where the blob
+    // didn't exist; any read landing in that window looked exactly like
+    // "no data yet" and reseeded the whole database from scratch. That
+    // silently destroyed live data more than once. Do not reintroduce it.
     await put(REVIEWS_BLOB_PATH, JSON.stringify(reviews, null, 2), {
       access: "public",
       addRandomSuffix: false,
