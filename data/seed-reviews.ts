@@ -19,6 +19,9 @@ export type Review = {
   country: string;
   /** null when the exact address was never logged */
   address: string | null;
+  /** Looked up via /edit's OpenStreetMap search. Optional — address text alone is fine. */
+  lat?: number;
+  lng?: number;
   cuisine: string;
   /**
    * ISO timestamp from the calendar booking, or a plain YYYY-MM-DD from

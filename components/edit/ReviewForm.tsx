@@ -1,9 +1,10 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { Dish, Photo, Review } from "@/data/seed-reviews";
 import { TIER_ORDER, TIERS, type Tier } from "@/lib/tiers";
+import type { GeocodeResult } from "@/app/api/edit/geocode/route";
 import Stars from "@/components/Stars";
 
 type Mode = "create" | "edit";
@@ -13,6 +14,8 @@ const EMPTY: Omit<Review, "slug"> = {
   city: "",
   country: "UK",
   address: null,
+  lat: undefined,
+  lng: undefined,
   cuisine: "",
   visitedAt: null,
   price: null,
@@ -60,6 +63,8 @@ export default function ReviewForm({
           city: initial.city,
           country: initial.country,
           address: initial.address,
+          lat: initial.lat,
+          lng: initial.lng,
           cuisine: initial.cuisine,
           visitedAt: initial.visitedAt,
           price: initial.price,
@@ -80,6 +85,56 @@ export default function ReviewForm({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+
+  // ---- location lookup (OpenStreetMap / Nominatim) ----
+  const [locQuery, setLocQuery] = useState("");
+  const [locResults, setLocResults] = useState<GeocodeResult[]>([]);
+  const [locOpen, setLocOpen] = useState(false);
+  const [locSearching, setLocSearching] = useState(false);
+  const locDebounce = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    if (locDebounce.current) clearTimeout(locDebounce.current);
+    if (locQuery.trim().length < 3) {
+      setLocResults([]);
+      return;
+    }
+    locDebounce.current = setTimeout(async () => {
+      setLocSearching(true);
+      try {
+        const res = await fetch(`/api/edit/geocode?q=${encodeURIComponent(locQuery)}`);
+        const data = await res.json();
+        setLocResults(data.results ?? []);
+        setLocOpen(true);
+      } catch {
+        setLocResults([]);
+      } finally {
+        setLocSearching(false);
+      }
+    }, 500);
+    return () => {
+      if (locDebounce.current) clearTimeout(locDebounce.current);
+    };
+  }, [locQuery]);
+
+  function pickLocation(r: GeocodeResult) {
+    setFields((f) => ({
+      ...f,
+      address: r.address ?? f.address,
+      city: r.city || f.city,
+      country: r.country || f.country,
+      lat: r.lat,
+      lng: r.lng,
+    }));
+    setLocQuery("");
+    setLocResults([]);
+    setLocOpen(false);
+  }
+
+  function clearLocation() {
+    set("lat", undefined);
+    set("lng", undefined);
+  }
 
   function set<K extends keyof Omit<Review, "slug">>(key: K, value: Omit<Review, "slug">[K]) {
     setFields((f) => ({ ...f, [key]: value }));
@@ -257,6 +312,67 @@ export default function ReviewForm({
               value={fields.address ?? ""}
               onChange={(e) => set("address", e.target.value || null)}
             />
+          </div>
+
+          <div className="relative space-y-1.5 sm:col-span-2">
+            <label className={labelCls}>
+              Look up on the map (OpenStreetMap — free, no key needed)
+            </label>
+            <input
+              className={inputCls}
+              value={locQuery}
+              onChange={(e) => setLocQuery(e.target.value)}
+              onFocus={() => locResults.length > 0 && setLocOpen(true)}
+              placeholder="Search by name and city — e.g. Septime Paris"
+            />
+            {locSearching && (
+              <p className="text-xs text-muted">Searching…</p>
+            )}
+
+            {locOpen && locResults.length > 0 && (
+              <ul className="absolute z-10 mt-1 w-full overflow-hidden rounded-lg border border-line bg-surface shadow-lg">
+                {locResults.map((r, i) => (
+                  <li key={i}>
+                    <button
+                      type="button"
+                      onClick={() => pickLocation(r)}
+                      className="block w-full px-3.5 py-2.5 text-left text-sm hover:bg-surface-2"
+                    >
+                      <span className="block truncate">{r.label}</span>
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+
+            {fields.lat != null && fields.lng != null && (
+              <div className="mt-2 space-y-2">
+                <div className="overflow-hidden rounded-lg border border-line">
+                  <iframe
+                    title="Location preview"
+                    className="h-48 w-full"
+                    loading="lazy"
+                    src={`https://www.openstreetmap.org/export/embed.html?bbox=${
+                      fields.lng - 0.006
+                    }%2C${fields.lat - 0.004}%2C${fields.lng + 0.006}%2C${
+                      fields.lat + 0.004
+                    }&layer=mapnik&marker=${fields.lat}%2C${fields.lng}`}
+                  />
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-xs text-muted">
+                    {fields.lat.toFixed(5)}, {fields.lng.toFixed(5)}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={clearLocation}
+                    className="text-xs text-muted hover:text-[#e0554f]"
+                  >
+                    Remove pin
+                  </button>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="space-y-1.5">

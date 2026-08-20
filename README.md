@@ -48,12 +48,12 @@ on first request.
 Sign in at `/edit/login` with `ADMIN_USERNAME` / `ADMIN_PASSWORD`. From
 there:
 
-- **`/edit`** — every review, with Edit / Delete on each row.
+- **`/edit`** — every review, filterable and searchable (see below).
 - **`/edit/new`** — add a restaurant. The slug auto-fills from the name
   (editable before saving; fixed afterwards, since the URL depends on it).
 - **`/edit/<slug>`** — edit any field, including the 0–3 star rating,
-  write-up paragraphs, named dishes, tags, and photos (drag a file in,
-  it uploads immediately and appears as a thumbnail).
+  write-up paragraphs, named dishes, tags, photos (drag a file in, it
+  uploads immediately and appears as a thumbnail), and location.
 
 Saves take effect immediately — every public page reads live data on
 each request, so there's no rebuild or cache to wait on. Deleting a
@@ -63,6 +63,37 @@ Auth is a signed, `httpOnly` session cookie (14 days) — no external auth
 service, no user database. See [`lib/auth.ts`](lib/auth.ts) and
 [`middleware.ts`](middleware.ts), which gate every `/edit/*` page and
 `/api/edit/*` route.
+
+### Location — live lookup via OpenStreetMap
+
+The "Look up on the map" field in the edit form searches
+[Nominatim](https://nominatim.org/), OpenStreetMap's free geocoder — no
+API key, no billing account, no rate-limit setup. Type a name and city,
+pick the right result, and it fills in the address, city, country and
+coordinates, plus shows a small map preview so you can confirm the pin
+before saving.
+
+Any review with coordinates gets an embedded map and a "Get directions"
+link on its public page. Coordinates are entirely optional — leave the
+address as free text and skip the lookup if you'd rather.
+
+The lookup is proxied through [`/api/edit/geocode`](app/api/edit/geocode/route.ts)
+because Nominatim requires a real identifying `User-Agent` header, which
+browsers won't let client-side code set directly. It's gated behind
+`/edit` auth like the rest of the admin API. Nominatim's usage policy
+asks for roughly one request per second at most — normal typing-speed
+searching from a single admin stays well under that.
+
+### The dashboard — filtering and sorting
+
+`/edit` opens on four stat tiles (total, needs attention, no photos, no
+map pin) that double as quick filters — click one to jump straight to
+just those reviews. Below that: filter by city or by star rating,
+free-text search across name/city/cuisine/tags, and sort by most
+recent, oldest, rating, name, or "needs attention first".
+
+"Needs attention" means `tier: "unlogged"` or a `needsCheck` note is
+set — the same signal the public About page's open-questions count uses.
 
 ### Adding a review by hand instead
 
@@ -183,6 +214,7 @@ app/
     reviews/route.ts           create
     reviews/[slug]/route.ts     update / delete
     upload/route.ts            photo upload / delete
+    geocode/route.ts           OpenStreetMap address search proxy
   icon.png, apple-icon.png  favicon, from the hand-drawn mark
   sitemap.ts, robots.ts
 middleware.ts             guards /edit/* and /api/edit/*
@@ -195,7 +227,7 @@ lib/
   image-size.ts             dependency-free JPEG/PNG/WebP/GIF dimension reader
   photos.ts, format.ts
 components/
-  edit/                    ReviewForm, LogoutButton, DeleteReviewButton
+  edit/                    ReviewForm, DashboardTable, LogoutButton, DeleteReviewButton
   Nav, Hero, ReviewCard, ReviewGrid, Stars, TierBadge, Gallery, …
 data/
   seed-reviews.ts          initial content — see "Adding a review by hand"

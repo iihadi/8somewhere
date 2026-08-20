@@ -24,6 +24,8 @@ export async function PUT(req: Request, { params }: Params) {
     city: body.city?.trim() || "",
     country: body.country?.trim() || "",
     address: body.address?.trim() || null,
+    lat: typeof body.lat === "number" && Number.isFinite(body.lat) ? body.lat : undefined,
+    lng: typeof body.lng === "number" && Number.isFinite(body.lng) ? body.lng : undefined,
     cuisine: body.cuisine?.trim() || "",
     visitedAt: body.visitedAt?.trim() || null,
     price: body.price?.trim() || null,

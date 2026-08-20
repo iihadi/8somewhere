@@ -38,6 +38,7 @@ export default async function ReviewPage({ params }: Params) {
   if (!review) notFound();
 
   const cover = review.photos?.[0] ?? null;
+  const hasLocation = review.lat != null && review.lng != null;
   const more = sortByDate(await getAllReviews())
     .filter((r) => r.slug !== review.slug && r.city === review.city)
     .slice(0, 3);
@@ -132,8 +133,33 @@ export default async function ReviewPage({ params }: Params) {
                 <p className="text-muted">
                   {review.address ?? `${review.city} — address not logged`}
                 </p>
+                {hasLocation && (
+                  <a
+                    href={`https://www.openstreetmap.org/directions?to=${review.lat}%2C${review.lng}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-block text-cream underline decoration-line underline-offset-4 hover:decoration-ember"
+                  >
+                    Get directions ↗
+                  </a>
+                )}
               </div>
             </div>
+
+            {hasLocation && (
+              <div className="mt-6 overflow-hidden rounded-2xl border border-line">
+                <iframe
+                  title={`Map — ${review.name}`}
+                  className="h-56 w-full grayscale-[30%]"
+                  loading="lazy"
+                  src={`https://www.openstreetmap.org/export/embed.html?bbox=${
+                    review.lng! - 0.008
+                  }%2C${review.lat! - 0.005}%2C${review.lng! + 0.008}%2C${
+                    review.lat! + 0.005
+                  }&layer=mapnik&marker=${review.lat}%2C${review.lng}`}
+                />
+              </div>
+            )}
           </Reveal>
         </div>
       </header>
