@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Brand from "@/components/Brand";
 
 export default function Footer({
   total,
@@ -11,7 +12,7 @@ export default function Footer({
     <footer className="mt-32 border-t border-line">
       <div className="mx-auto flex max-w-6xl flex-col gap-6 px-6 py-12 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="font-display text-2xl">8somewhere</p>
+          <p className="font-display text-2xl"><Brand /></p>
           <p className="mt-1.5 max-w-sm text-sm text-muted">
             {total} meals across {cities} cities. Dates pulled from a
             calendar I should probably clean up.

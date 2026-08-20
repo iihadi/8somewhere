@@ -64,6 +64,16 @@ service, no user database. See [`lib/auth.ts`](lib/auth.ts) and
 [`middleware.ts`](middleware.ts), which gate every `/edit/*` page and
 `/api/edit/*` route.
 
+### HEIC/HEIF photos (iPhone)
+
+Photos straight off an iPhone are usually `.heic`, which no browser
+renders. The upload route detects them by extension (iOS reports the
+MIME type inconsistently) and converts to JPEG server-side via
+[`heic-convert`](https://www.npmjs.com/package/heic-convert) — pure
+JS/WASM, no native build step, so it runs on Vercel without extra
+config. Everything downstream (the gallery, cards, dimension reader)
+only ever sees the converted JPEG.
+
 ### Location — live lookup via OpenStreetMap
 
 The "Look up on the map" field in the edit form searches
@@ -198,6 +208,7 @@ app/
   layout.tsx              root shell — fonts, metadata, no Nav/Footer
   (site)/                 route group: the public site (has Nav/Footer)
     layout.tsx             fetches stats once, renders Nav + Footer
+    loading.tsx             shown while a page's data fetch is in flight
     page.tsx                homepage
     reviews/page.tsx         archive, filterable by city and rating
     reviews/[slug]/           individual review
@@ -205,6 +216,7 @@ app/
     about/                    scoring key + tier counts
   edit/                    the admin UI — outside the (site) group
     layout.tsx              minimal edit-mode header
+    loading.tsx              same loading state, edit-mode copy
     login/page.tsx            sign-in form
     page.tsx                 dashboard
     new/page.tsx               create
@@ -228,6 +240,8 @@ lib/
   photos.ts, format.ts
 components/
   edit/                    ReviewForm, DashboardTable, LogoutButton, DeleteReviewButton
+  Brand.tsx                the site name, "somewhere" always italic
+  LoadingScreen.tsx, Spinner.tsx
   Nav, Hero, ReviewCard, ReviewGrid, Stars, TierBadge, Gallery, …
 data/
   seed-reviews.ts          initial content — see "Adding a review by hand"

@@ -85,7 +85,7 @@ export default function Hero({
                     {word}
                   </span>
                 ) : (
-                  word
+                  <span className="italic">{word}</span>
                 )}
               </motion.span>
             </span>

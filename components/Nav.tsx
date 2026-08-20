@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { motion, useScroll, useMotionValueEvent } from "framer-motion";
 import { useState } from "react";
 import Image from "next/image";
+import Brand from "@/components/Brand";
 
 const links = [
   { href: "/reviews", label: "Reviews" },
@@ -41,9 +42,7 @@ export default function Nav() {
               className="opacity-90"
             />
           </span>
-          <span className="font-display text-lg tracking-tight">
-            8somewhere
-          </span>
+          <Brand className="font-display text-lg tracking-tight" />
         </Link>
 
         <ul className="flex items-center gap-1 text-sm">

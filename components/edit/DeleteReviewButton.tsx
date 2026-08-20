@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import Spinner from "@/components/Spinner";
 
 export default function DeleteReviewButton({
   slug,
@@ -32,8 +33,9 @@ export default function DeleteReviewButton({
     <button
       onClick={onClick}
       disabled={loading}
-      className="text-sm text-muted transition-colors hover:text-[#e0554f] disabled:opacity-50"
+      className="inline-flex items-center gap-1.5 text-sm text-muted transition-colors hover:text-[#e0554f] disabled:opacity-50"
     >
+      {loading && <Spinner />}
       {loading ? "Deleting…" : "Delete"}
     </button>
   );

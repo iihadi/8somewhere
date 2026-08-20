@@ -1,6 +1,8 @@
 "use client";
 
 import { Suspense, useState } from "react";
+import Brand from "@/components/Brand";
+import Spinner from "@/components/Spinner";
 import { useRouter, useSearchParams } from "next/navigation";
 
 function LoginForm() {
@@ -38,7 +40,7 @@ function LoginForm() {
   return (
     <div className="mx-auto max-w-sm">
       <p className="eyebrow">Sign in</p>
-      <h1 className="mt-2 font-display text-3xl">Edit 8somewhere</h1>
+      <h1 className="mt-2 font-display text-3xl">Edit <Brand /></h1>
 
       <form onSubmit={onSubmit} className="mt-8 space-y-4">
         <div className="space-y-1.5">
@@ -69,8 +71,9 @@ function LoginForm() {
         <button
           type="submit"
           disabled={loading}
-          className="w-full rounded-full bg-cream px-6 py-2.5 text-sm font-medium text-ink transition-opacity disabled:opacity-50"
+          className="flex w-full items-center justify-center gap-2 rounded-full bg-cream px-6 py-2.5 text-sm font-medium text-ink transition-opacity disabled:opacity-50"
         >
+          {loading && <Spinner />}
           {loading ? "Signing in…" : "Sign in"}
         </button>
       </form>

@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import Spinner from "@/components/Spinner";
 
 export default function LogoutButton() {
   const router = useRouter();
@@ -18,8 +19,9 @@ export default function LogoutButton() {
     <button
       onClick={onClick}
       disabled={loading}
-      className="rounded-full border border-line px-4 py-2 text-sm text-muted transition-colors hover:text-cream disabled:opacity-50"
+      className="inline-flex items-center gap-2 rounded-full border border-line px-4 py-2 text-sm text-muted transition-colors hover:text-cream disabled:opacity-50"
     >
+      {loading && <Spinner />}
       {loading ? "Signing out…" : "Sign out"}
     </button>
   );

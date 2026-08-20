@@ -1,4 +1,5 @@
 import Link from "next/link";
+import Brand from "@/components/Brand";
 
 export default function EditLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -6,7 +7,7 @@ export default function EditLayout({ children }: { children: React.ReactNode }) 
       <div className="border-b border-line">
         <div className="mx-auto flex max-w-4xl items-center justify-between px-6 py-4">
           <Link href="/edit" className="font-display text-lg tracking-tight">
-            8somewhere <span className="text-muted">— edit</span>
+            <Brand /> <span className="text-muted">— edit</span>
           </Link>
           <Link
             href="/"

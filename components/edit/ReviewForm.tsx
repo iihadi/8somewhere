@@ -6,6 +6,7 @@ import type { Dish, Photo, Review } from "@/data/seed-reviews";
 import { TIER_ORDER, TIERS, type Tier } from "@/lib/tiers";
 import type { GeocodeResult } from "@/app/api/edit/geocode/route";
 import Stars from "@/components/Stars";
+import Spinner from "@/components/Spinner";
 
 type Mode = "create" | "edit";
 
@@ -326,7 +327,10 @@ export default function ReviewForm({
               placeholder="Search by name and city — e.g. Septime Paris"
             />
             {locSearching && (
-              <p className="text-xs text-muted">Searching…</p>
+              <p className="flex items-center gap-1.5 text-xs text-muted">
+                <Spinner className="h-3 w-3" />
+                Searching…
+              </p>
             )}
 
             {locOpen && locResults.length > 0 && (
@@ -606,10 +610,17 @@ export default function ReviewForm({
               !SLUG_RE.test(slug) ? "pointer-events-none opacity-40" : ""
             }`}
           >
-            {uploading ? "Uploading…" : "+ Add photos"}
+            {uploading ? (
+              <span className="flex items-center gap-1.5">
+                <Spinner />
+                Uploading…
+              </span>
+            ) : (
+              "+ Add photos"
+            )}
             <input
               type="file"
-              accept="image/*"
+              accept="image/*,.heic,.heif"
               multiple
               className="hidden"
               onChange={(e) => onFilesSelected(e.target.files)}
@@ -636,8 +647,9 @@ export default function ReviewForm({
         <button
           type="submit"
           disabled={saving || uploading}
-          className="rounded-full bg-cream px-6 py-2.5 text-sm font-medium text-ink transition-opacity disabled:opacity-50"
+          className="flex items-center gap-2 rounded-full bg-cream px-6 py-2.5 text-sm font-medium text-ink transition-opacity disabled:opacity-50"
         >
+          {saving && <Spinner />}
           {saving ? "Saving…" : mode === "create" ? "Create review" : "Save changes"}
         </button>
       </div>
