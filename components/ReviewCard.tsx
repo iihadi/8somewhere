@@ -70,7 +70,7 @@ export default function ReviewCard({
 
         <div className="-mt-8 relative space-y-3 p-5">
           <div className="flex items-start justify-between gap-4">
-            <h3 className="font-display text-2xl leading-tight">
+            <h3 className="font-display text-2xl leading-tight line-clamp-2">
               {review.name}
             </h3>
             <span className="shrink-0 pt-1.5 text-xs text-muted">
@@ -82,10 +82,14 @@ export default function ReviewCard({
             {review.verdict}
           </p>
 
-          <div className="flex items-center justify-between border-t border-line pt-3">
-            <Rating value={review.rating} size="sm" />
-            <span className="text-xs text-muted">
-              {review.cuisine} · {formatShortDate(review.visitedAt)}
+          <div className="flex items-center justify-between gap-4 border-t border-line pt-3">
+            <span className="shrink-0">
+              <Rating value={review.rating} size="sm" />
+            </span>
+            <span className="text-right text-xs leading-snug text-muted">
+              {review.cuisine}
+              <br />
+              {formatShortDate(review.visitedAt)}
             </span>
           </div>
         </div>

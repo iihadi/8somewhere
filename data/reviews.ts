@@ -660,7 +660,7 @@ export const reviews: Review[] = [
   },
   {
     slug: "le-george",
-    name: "Le George — Four Seasons Hôtel George V",
+    name: "Le George",
     city: "Paris",
     country: "France",
     address: "31 Avenue George V, 75008 Paris",

@@ -1,16 +1,18 @@
 "use client";
 
 import Link from "next/link";
-import { motion } from "framer-motion";
+import { motion, type Variants } from "framer-motion";
 import { stats, reviewsByDate } from "@/data/reviews";
 import { placeholderGradient, coverFor } from "@/lib/photos";
 
-const line = {
+const EXPO = [0.16, 1, 0.3, 1] as const;
+
+const line: Variants = {
   hidden: { opacity: 0, y: "60%" },
   show: (i: number) => ({
     opacity: 1,
     y: "0%",
-    transition: { duration: 0.9, delay: 0.15 + i * 0.1, ease: [0.16, 1, 0.3, 1] },
+    transition: { duration: 0.9, delay: 0.15 + i * 0.1, ease: EXPO },
   }),
 };
 
