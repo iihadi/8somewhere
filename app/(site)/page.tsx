@@ -2,6 +2,7 @@ import Link from "next/link";
 import { getAllReviews } from "@/lib/repo";
 import { getStats, onThisDay, sortByDate } from "@/lib/derive";
 import ReviewCard from "@/components/ReviewCard";
+import Badges from "@/components/Badges";
 import Reveal from "@/components/Reveal";
 import Hero from "@/components/Hero";
 import TierBadge from "@/components/TierBadge";
@@ -25,6 +26,11 @@ export default async function Home() {
   const loved = reviews.filter((r) => r.tier === "loved");
   const avoid = reviews.filter((r) => r.tier === "avoid");
   const throwback = onThisDay(reviews);
+  /** The badge answer to "where should I eat" — not the same as the
+      star ranking, which is about how good the food was. */
+  const mustVisit = reviews.filter((r) =>
+    (r.badges ?? []).includes("must-visit")
+  );
 
   return (
     <>
@@ -38,7 +44,10 @@ export default async function Home() {
               { k: "Restaurants", v: stats.total },
               { k: "Cities", v: stats.cities },
               { k: "Three stars", v: stats.loved },
-              { k: "Been back to", v: stats.repeats },
+              {
+                k: stats.repeats === 1 ? "Place revisited" : "Places revisited",
+                v: stats.repeats,
+              },
             ].map((s) => (
               <div key={s.k} className="bg-surface px-6 py-8">
                 <dd className="font-display text-4xl">{s.v}</dd>
@@ -77,6 +86,48 @@ export default async function Home() {
               </ul>
             </div>
           </Reveal>
+        </section>
+      )}
+
+      {/* ---- Must visit ---- */}
+      {mustVisit.length > 0 && (
+        <section className="mx-auto mt-28 max-w-6xl px-6">
+          <Reveal className="mb-10">
+            <p className="eyebrow">If you only go to one</p>
+            <h2 className="mt-2 font-display text-4xl sm:text-5xl">
+              Where I&rsquo;d send you
+            </h2>
+            <p className="mt-4 max-w-xl text-muted">
+              Not the same list as the three stars. These are the ones I
+              tell people to book.
+            </p>
+          </Reveal>
+
+          <ul className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {mustVisit.map((r, i) => (
+              <Reveal key={r.slug} delay={i * 0.04}>
+                <li className="h-full">
+                  <Link
+                    href={`/reviews/${r.slug}`}
+                    className="flex h-full flex-col gap-2 rounded-2xl border border-line bg-surface p-5 transition-colors hover:border-ember/40"
+                  >
+                    <span className="flex flex-wrap gap-1.5">
+                      <Badges badges={r.badges} size="sm" limit={2} />
+                    </span>
+                    <span className="font-display text-2xl leading-tight">
+                      {r.name}
+                    </span>
+                    <span className="text-xs text-muted">
+                      {r.cuisine} · {r.city}
+                    </span>
+                    <span className="mt-auto pt-2 text-sm text-muted">
+                      {r.verdict}
+                    </span>
+                  </Link>
+                </li>
+              </Reveal>
+            ))}
+          </ul>
         </section>
       )}
 

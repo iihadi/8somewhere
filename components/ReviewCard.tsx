@@ -6,7 +6,9 @@ import { motion } from "framer-motion";
 import type { Review } from "@/data/seed-reviews";
 import { placeholderGradient } from "@/lib/photos";
 import { formatShortDate } from "@/lib/format";
+import { returnCount } from "@/lib/derive";
 import TierBadge from "./TierBadge";
+import Badges from "./Badges";
 
 export default function ReviewCard({
   review,
@@ -18,6 +20,7 @@ export default function ReviewCard({
   priority?: boolean;
 }) {
   const cover = review.photos?.[0] ?? null;
+  const back = returnCount(review);
 
   return (
     <motion.article
@@ -62,6 +65,7 @@ export default function ReviewCard({
               {review.city}
             </span>
             <TierBadge tier={review.tier} size="sm" />
+            <Badges badges={review.badges} size="sm" limit={1} />
             {review.closed && (
               <span className="rounded-full bg-ink/70 px-2.5 py-1 text-[0.65rem] uppercase tracking-wider text-muted backdrop-blur-sm">
                 Closed
@@ -89,8 +93,10 @@ export default function ReviewCard({
           <div className="flex items-end justify-between gap-4 border-t border-line pt-3 text-xs text-muted">
             <span className="min-w-0">
               {review.cuisine}
-              {review.revisited && (
-                <span className="ml-2 text-ember">· been back</span>
+              {back > 0 && (
+                <span className="ml-2 text-ember">
+                  · {back + 1}&times; visited
+                </span>
               )}
             </span>
             <span className="shrink-0 text-right">

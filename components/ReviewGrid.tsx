@@ -4,10 +4,13 @@ import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
 import type { Review } from "@/data/seed-reviews";
 import { TIERS, TIER_ORDER, type Tier } from "@/lib/tiers";
+import { BADGES, type BadgeKey } from "@/lib/badges";
+import { badgesPresent, visitCount } from "@/lib/derive";
+import { parseCuisine } from "@/lib/cuisine";
 import ReviewCard from "./ReviewCard";
 import Stars from "./Stars";
 
-type Sort = "recent" | "verdict" | "name";
+type Sort = "recent" | "verdict" | "name" | "visits";
 
 function sortKey(r: Review) {
   return r.visitedAt ? +new Date(r.visitedAt) : -Infinity;
@@ -16,6 +19,8 @@ function sortKey(r: Review) {
 export default function ReviewGrid({ reviews }: { reviews: Review[] }) {
   const [city, setCity] = useState("All");
   const [tier, setTier] = useState<Tier | "All">("All");
+  const [badge, setBadge] = useState<BadgeKey | "All">("All");
+  const [cuisine, setCuisine] = useState("All");
   const [query, setQuery] = useState("");
   const [sort, setSort] = useState<Sort>("recent");
 
@@ -29,12 +34,32 @@ export default function ReviewGrid({ reviews }: { reviews: Review[] }) {
     [reviews]
   );
 
+  const badgeOptions = useMemo(() => badgesPresent(reviews), [reviews]);
+
+  /** Families, not raw strings — see lib/cuisine.ts. */
+  const cuisines = useMemo(
+    () => [
+      "All",
+      ...Array.from(
+        new Set(reviews.map((r) => parseCuisine(r.cuisine, r.cuisineFamily).family))
+      ).sort(),
+    ],
+    [reviews]
+  );
+
   const shown = useMemo(() => {
     const q = query.trim().toLowerCase();
 
     const filtered = reviews.filter((r) => {
       if (city !== "All" && r.city !== city) return false;
       if (tier !== "All" && r.tier !== tier) return false;
+      if (badge !== "All" && !(r.badges ?? []).includes(badge)) return false;
+      if (
+        cuisine !== "All" &&
+        parseCuisine(r.cuisine, r.cuisineFamily).family !== cuisine
+      ) {
+        return false;
+      }
       if (!q) return true;
       return (
         r.name.toLowerCase().includes(q) ||
@@ -51,9 +76,11 @@ export default function ReviewGrid({ reviews }: { reviews: Review[] }) {
           TIERS[a.tier].order - TIERS[b.tier].order || sortKey(b) - sortKey(a)
         );
       if (sort === "name") return a.name.localeCompare(b.name);
+      if (sort === "visits")
+        return visitCount(b) - visitCount(a) || sortKey(b) - sortKey(a);
       return sortKey(b) - sortKey(a);
     });
-  }, [reviews, city, tier, query, sort]);
+  }, [reviews, city, tier, badge, cuisine, query, sort]);
 
   return (
     <div className="space-y-8">
@@ -78,6 +105,46 @@ export default function ReviewGrid({ reviews }: { reviews: Review[] }) {
             </button>
           ))}
         </div>
+
+        {badgeOptions.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            <button
+              onClick={() => setBadge("All")}
+              className={`rounded-full border px-3.5 py-1.5 text-xs uppercase tracking-wider transition-colors ${
+                badge === "All"
+                  ? "border-cream/40 text-cream"
+                  : "border-line text-muted hover:text-cream"
+              }`}
+            >
+              Any badge
+            </button>
+            {badgeOptions.map((b) => {
+              const active = badge === b;
+              const { label, blurb, accent } = BADGES[b];
+              return (
+                <button
+                  key={b}
+                  onClick={() => setBadge(active ? "All" : b)}
+                  title={blurb}
+                  className={`rounded-full border px-3.5 py-1.5 text-xs uppercase tracking-wider transition-colors ${
+                    active ? "" : "border-line text-muted hover:text-cream"
+                  }`}
+                  style={
+                    active
+                      ? {
+                          color: accent,
+                          borderColor: `color-mix(in oklab, ${accent} 45%, transparent)`,
+                          backgroundColor: `color-mix(in oklab, ${accent} 12%, transparent)`,
+                        }
+                      : undefined
+                  }
+                >
+                  {label}
+                </button>
+              );
+            })}
+          </div>
+        )}
 
         <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex flex-wrap gap-2">
@@ -117,6 +184,18 @@ export default function ReviewGrid({ reviews }: { reviews: Review[] }) {
           </div>
 
           <div className="flex gap-3">
+            <select
+              value={cuisine}
+              onChange={(e) => setCuisine(e.target.value)}
+              aria-label="Filter by cuisine"
+              className="rounded-full border border-line bg-surface px-4 py-2 text-sm outline-none transition-colors focus:border-ember/50"
+            >
+              {cuisines.map((c) => (
+                <option key={c} value={c}>
+                  {c === "All" ? "All cuisines" : c}
+                </option>
+              ))}
+            </select>
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
@@ -130,6 +209,7 @@ export default function ReviewGrid({ reviews }: { reviews: Review[] }) {
             >
               <option value="recent">Most recent</option>
               <option value="verdict">By rating</option>
+              <option value="visits">Most visited</option>
               <option value="name">A–Z</option>
             </select>
           </div>
@@ -147,7 +227,7 @@ export default function ReviewGrid({ reviews }: { reviews: Review[] }) {
         exit transition there and accumulated in the DOM.
       */}
       <div
-        key={`${city}|${tier}|${sort}|${query}`}
+        key={`${city}|${tier}|${badge}|${cuisine}|${sort}|${query}`}
         className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3"
       >
         {shown.map((r, i) => (

@@ -3,11 +3,14 @@ import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import { getAllReviews, getReview } from "@/lib/repo";
-import { sortByDate } from "@/lib/derive";
+import { sortByDate, returnCount, revisitLabel } from "@/lib/derive";
+import { parseCuisine } from "@/lib/cuisine";
 import { TIERS } from "@/lib/tiers";
 import { placeholderGradient } from "@/lib/photos";
 import { formatDate, formatTime } from "@/lib/format";
 import TierBadge from "@/components/TierBadge";
+import Badges from "@/components/Badges";
+import { BADGES } from "@/lib/badges";
 import Reveal from "@/components/Reveal";
 import Gallery from "@/components/Gallery";
 import ReviewCard from "@/components/ReviewCard";
@@ -41,6 +44,8 @@ export default async function ReviewPage({ params }: Params) {
   const cover = review.photos?.[0] ?? null;
   const gallery = review.photos ?? [];
   const hasLocation = review.lat != null && review.lng != null;
+  const cuisine = parseCuisine(review.cuisine, review.cuisineFamily);
+  const back = returnCount(review);
   const more = sortByDate(all)
     .filter((r) => r.slug !== review.slug && r.city === review.city)
     .slice(0, 3);
@@ -93,17 +98,21 @@ export default async function ReviewPage({ params }: Params) {
 
             <div className="mt-6 flex flex-wrap items-center gap-2">
               <TierBadge tier={review.tier} size="lg" />
-              <span className="rounded-full border border-line bg-surface/80 px-3 py-1 text-xs text-muted backdrop-blur-sm">
-                {review.cuisine}
-              </span>
+              <Badges badges={review.badges} />
+              <Link
+                href={`/cuisines#${encodeURIComponent(cuisine.family)}`}
+                className="rounded-full border border-line bg-surface/80 px-3 py-1 text-xs text-muted backdrop-blur-sm transition-colors hover:border-ember/40 hover:text-cream"
+              >
+                {review.cuisine || cuisine.family}
+              </Link>
               {review.price && (
                 <span className="rounded-full border border-line bg-surface/80 px-3 py-1 text-xs text-muted backdrop-blur-sm">
                   {review.price}
                 </span>
               )}
-              {review.revisited && (
+              {back > 0 && (
                 <span className="rounded-full border border-ember/30 bg-ember/10 px-3 py-1 text-xs text-ember backdrop-blur-sm">
-                  Been back
+                  {revisitLabel(review)}
                 </span>
               )}
               {review.closed && (
@@ -129,18 +138,28 @@ export default async function ReviewPage({ params }: Params) {
         <Reveal>
           <div className="grid gap-5 border-y border-line py-6 sm:grid-cols-2">
             <div className="space-y-1 text-sm">
-              <p className="eyebrow">Visited</p>
+              <p className="eyebrow">{back > 0 ? "First visited" : "Visited"}</p>
               <p>
                 {review.visitedAt ? (
                   <>
                     {formatDate(review.visitedAt)}
                     {hasTime(review.visitedAt) &&
                       ` · ${formatTime(review.visitedAt)}`}
+                    {review.dateApprox && (
+                      <span className="text-muted"> (approx.)</span>
+                    )}
                   </>
                 ) : (
                   <span className="text-muted">Not recorded</span>
                 )}
               </p>
+              {back > 0 && (
+                <p className="text-muted">
+                  {revisitLabel(review)}
+                  {review.lastVisitedAt &&
+                    ` — last on ${formatDate(review.lastVisitedAt)}`}
+                </p>
+              )}
             </div>
             <div className="space-y-1 text-sm">
               <p className="eyebrow">Where</p>
@@ -263,6 +282,18 @@ export default async function ReviewPage({ params }: Params) {
               <TierBadge tier={review.tier} size="lg" />
               <p className="text-sm text-muted">{TIERS[review.tier].blurb}</p>
             </div>
+            {(review.badges?.length ?? 0) > 0 && (
+              <ul className="mt-5 space-y-2 border-t border-line pt-4">
+                {review.badges!.map((b) => (
+                  <li key={b} className="flex flex-wrap items-center gap-3">
+                    <Badges badges={[b]} size="sm" />
+                    <span className="text-sm text-muted">
+                      {BADGES[b].blurb}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
           </div>
         </Reveal>
 

@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getAllReviews } from "@/lib/repo";
-import { groupByCuisine } from "@/lib/derive";
+import { groupByCuisine, stylesInGroup } from "@/lib/derive";
 import { formatShortDate } from "@/lib/format";
 import Stars from "@/components/Stars";
+import Badges from "@/components/Badges";
 import Reveal from "@/components/Reveal";
 
 export const metadata: Metadata = {
@@ -24,14 +25,17 @@ export default async function CuisinesPage() {
         <h1 className="mt-3 font-display text-5xl sm:text-6xl">Cuisines</h1>
         <p className="mt-4 max-w-xl text-muted">
           {groups.length} kinds of cooking across {reviews.length}{" "}
-          restaurants, most-visited first.
+          restaurants, most-visited first. Kitchens are grouped by what
+          they cook, not by how the entry was typed — &ldquo;French
+          tasting menu&rdquo; and &ldquo;Modern French&rdquo; both live
+          under French.
         </p>
       </Reveal>
 
       <div className="space-y-10">
         {groups.map((g, gi) => (
           <Reveal key={g.name} delay={Math.min(gi * 0.03, 0.3)}>
-            <section>
+            <section id={encodeURIComponent(g.name)} className="scroll-mt-24">
               <div className="mb-3 flex items-baseline justify-between gap-4 border-b border-line pb-2">
                 <h2 className="font-display text-2xl">{g.name}</h2>
                 <span className="shrink-0 text-sm text-muted">
@@ -39,6 +43,21 @@ export default async function CuisinesPage() {
                   {g.reviews.length === 1 ? "place" : "places"}
                 </span>
               </div>
+
+              {/* The styles folded into this family, so the grouping is
+                  visible rather than something the page did silently. */}
+              {stylesInGroup(g).length > 0 && (
+                <p className="mb-3 flex flex-wrap gap-1.5">
+                  {stylesInGroup(g).map((style) => (
+                    <span
+                      key={style}
+                      className="rounded-full border border-line px-2.5 py-0.5 text-[0.7rem] text-muted"
+                    >
+                      {style}
+                    </span>
+                  ))}
+                </p>
+              )}
 
               <ul className="divide-y divide-line overflow-hidden rounded-2xl border border-line bg-surface">
                 {g.reviews.map((r) => (
@@ -56,6 +75,7 @@ export default async function CuisinesPage() {
                           {r.visitedAt && ` · ${formatShortDate(r.visitedAt)}`}
                         </span>
                       </span>
+                      <Badges badges={r.badges} size="sm" limit={1} />
                       <Stars tier={r.tier} size="sm" />
                     </Link>
                   </li>
