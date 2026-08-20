@@ -3,16 +3,18 @@
 import Image from "next/image";
 import { useCallback, useEffect, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { photosFor, placeholderGradient } from "@/lib/photos";
+import type { Photo } from "@/data/seed-reviews";
+import { placeholderGradient } from "@/lib/photos";
 
 export default function Gallery({
   slug,
   name,
+  photos,
 }: {
   slug: string;
   name: string;
+  photos: Photo[];
 }) {
-  const photos = photosFor(slug);
   const [open, setOpen] = useState<number | null>(null);
 
   const close = useCallback(() => setOpen(null), []);
@@ -39,7 +41,7 @@ export default function Gallery({
     };
   }, [open, close, step]);
 
-  // No photos dropped in yet — show the placeholder rail so the page
+  // No photos uploaded yet — show the placeholder rail so the page
   // still reads as finished.
   if (photos.length === 0) {
     return (
@@ -58,11 +60,14 @@ export default function Gallery({
           ))}
         </div>
         <p className="text-sm text-muted">
-          Drop your Google Photos exports into{" "}
-          <code className="rounded bg-surface-2 px-1.5 py-0.5 text-cream">
-            public/photos/{slug}/
-          </code>{" "}
-          and run <code className="text-cream">npm run photos</code>.
+          No photos yet — add some from{" "}
+          <a
+            href={`/edit/${slug}`}
+            className="text-cream underline decoration-line underline-offset-4 hover:decoration-ember"
+          >
+            the edit page
+          </a>
+          .
         </p>
       </section>
     );
@@ -75,7 +80,7 @@ export default function Gallery({
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {photos.map((p, i) => (
           <motion.button
-            key={p.src}
+            key={p.url}
             onClick={() => setOpen(i)}
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -84,7 +89,7 @@ export default function Gallery({
             className="group relative aspect-[4/3] overflow-hidden rounded-xl border border-line"
           >
             <Image
-              src={p.src}
+              src={p.url}
               alt={`${name} — photo ${i + 1}`}
               fill
               sizes="(max-width: 768px) 100vw, 33vw"
@@ -113,7 +118,7 @@ export default function Gallery({
               className="relative max-h-[85vh] w-full max-w-4xl"
             >
               <Image
-                src={photos[open].src}
+                src={photos[open].url}
                 alt={`${name} — photo ${open + 1}`}
                 width={photos[open].width}
                 height={photos[open].height}

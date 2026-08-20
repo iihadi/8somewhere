@@ -2,9 +2,11 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   images: {
-    // Local photos only for now. Add remotePatterns here if you ever
-    // serve images from a bucket / CDN instead of /public.
     formats: ["image/avif", "image/webp"],
+    remotePatterns: [
+      // Uploaded photos, served from Vercel Blob in production.
+      { protocol: "https", hostname: "*.public.blob.vercel-storage.com" },
+    ],
   },
 };
 

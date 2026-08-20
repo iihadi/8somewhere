@@ -1,17 +1,9 @@
-import manifest from "@/data/photos.json";
-
-export type Photo = { src: string; width: number; height: number };
-
-const photos = manifest as Record<string, Photo[]>;
-
-/** Photos for a review slug, or [] if none have been added yet. */
-export function photosFor(slug: string): Photo[] {
-  return photos[slug] ?? [];
-}
-
-export function coverFor(slug: string): Photo | null {
-  return photosFor(slug)[0] ?? null;
-}
+/**
+ * Photos now live on the review object itself (`review.photos`,
+ * populated via /edit uploads), not a build-time manifest — see
+ * data/seed-reviews.ts for the Photo type. This file only keeps the
+ * placeholder generator.
+ */
 
 /**
  * Deterministic gradient used wherever a real photo does not exist yet.

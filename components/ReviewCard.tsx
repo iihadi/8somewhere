@@ -3,8 +3,8 @@
 import Link from "next/link";
 import Image from "next/image";
 import { motion } from "framer-motion";
-import type { Review } from "@/data/reviews";
-import { coverFor, placeholderGradient } from "@/lib/photos";
+import type { Review } from "@/data/seed-reviews";
+import { placeholderGradient } from "@/lib/photos";
 import { formatShortDate } from "@/lib/format";
 import TierBadge from "./TierBadge";
 
@@ -17,7 +17,7 @@ export default function ReviewCard({
   index?: number;
   priority?: boolean;
 }) {
-  const cover = coverFor(review.slug);
+  const cover = review.photos?.[0] ?? null;
 
   return (
     <motion.article
@@ -37,7 +37,7 @@ export default function ReviewCard({
         <div className="relative aspect-[4/3] overflow-hidden">
           {cover ? (
             <Image
-              src={cover.src}
+              src={cover.url}
               alt={review.name}
               fill
               priority={priority}

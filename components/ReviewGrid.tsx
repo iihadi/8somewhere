@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { motion } from "framer-motion";
-import type { Review } from "@/data/reviews";
+import type { Review } from "@/data/seed-reviews";
 import { TIERS, TIER_ORDER, type Tier } from "@/lib/tiers";
 import ReviewCard from "./ReviewCard";
 import Stars from "./Stars";

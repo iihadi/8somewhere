@@ -1,10 +1,12 @@
 import type { MetadataRoute } from "next";
-import { reviews } from "@/data/reviews";
+import { getAllReviews } from "@/lib/repo";
 
 // Set this to your real domain once Vercel gives you one.
 const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://example.vercel.app";
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const reviews = await getAllReviews();
+
   const staticRoutes = ["", "/reviews", "/wishlist", "/about"].map((path) => ({
     url: `${BASE}${path}`,
     lastModified: new Date(),

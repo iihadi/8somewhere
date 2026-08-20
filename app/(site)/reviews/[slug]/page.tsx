@@ -2,9 +2,10 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
-import { reviews, reviewsByDate, getReview } from "@/data/reviews";
+import { getAllReviews, getReview } from "@/lib/repo";
+import { sortByDate } from "@/lib/derive";
 import { TIERS } from "@/lib/tiers";
-import { coverFor, placeholderGradient } from "@/lib/photos";
+import { placeholderGradient } from "@/lib/photos";
 import { formatDate, formatTime } from "@/lib/format";
 import TierBadge from "@/components/TierBadge";
 import Reveal from "@/components/Reveal";
@@ -13,13 +14,11 @@ import ReviewCard from "@/components/ReviewCard";
 
 type Params = { params: Promise<{ slug: string }> };
 
-export function generateStaticParams() {
-  return reviews.map((r) => ({ slug: r.slug }));
-}
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { slug } = await params;
-  const review = getReview(slug);
+  const review = await getReview(slug);
   if (!review) return {};
   return {
     title: review.name,
@@ -35,11 +34,11 @@ function hasTime(iso: string) {
 
 export default async function ReviewPage({ params }: Params) {
   const { slug } = await params;
-  const review = getReview(slug);
+  const review = await getReview(slug);
   if (!review) notFound();
 
-  const cover = coverFor(review.slug);
-  const more = reviewsByDate
+  const cover = review.photos?.[0] ?? null;
+  const more = sortByDate(await getAllReviews())
     .filter((r) => r.slug !== review.slug && r.city === review.city)
     .slice(0, 3);
 
@@ -50,7 +49,7 @@ export default async function ReviewPage({ params }: Params) {
         <div className="relative h-[46vh] min-h-[320px] w-full overflow-hidden">
           {cover ? (
             <Image
-              src={cover.src}
+              src={cover.url}
               alt={review.name}
               fill
               priority
@@ -68,12 +67,20 @@ export default async function ReviewPage({ params }: Params) {
 
         <div className="mx-auto -mt-40 max-w-3xl px-6">
           <Reveal>
-            <Link
-              href="/reviews"
-              className="text-sm text-muted transition-colors hover:text-cream"
-            >
-              ← All reviews
-            </Link>
+            <div className="flex items-center justify-between gap-4">
+              <Link
+                href="/reviews"
+                className="text-sm text-muted transition-colors hover:text-cream"
+              >
+                ← All reviews
+              </Link>
+              <Link
+                href={`/edit/${review.slug}`}
+                className="text-sm text-muted transition-colors hover:text-cream"
+              >
+                Edit ↗
+              </Link>
+            </div>
 
             <div className="mt-6 flex flex-wrap items-center gap-2">
               <TierBadge tier={review.tier} size="lg" />
@@ -192,7 +199,7 @@ export default async function ReviewPage({ params }: Params) {
 
         {/* ---- Photos ---- */}
         <Reveal>
-          <Gallery slug={review.slug} name={review.name} />
+          <Gallery slug={review.slug} name={review.name} photos={review.photos ?? []} />
         </Reveal>
 
         {/* ---- Verdict footer ---- */}

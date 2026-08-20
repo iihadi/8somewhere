@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
-import { reviewsByDate } from "@/data/reviews";
+import { getAllReviews } from "@/lib/repo";
+import { sortByDate } from "@/lib/derive";
 import ReviewGrid from "@/components/ReviewGrid";
 import Reveal from "@/components/Reveal";
 
@@ -8,7 +9,11 @@ export const metadata: Metadata = {
   description: "Every restaurant, filtered by city and by verdict.",
 };
 
-export default function ReviewsPage() {
+export const dynamic = "force-dynamic";
+
+export default async function ReviewsPage() {
+  const reviews = sortByDate(await getAllReviews());
+
   return (
     <div className="mx-auto max-w-6xl px-6 pt-20">
       <Reveal className="mb-12">
@@ -20,7 +25,7 @@ export default function ReviewsPage() {
         </p>
       </Reveal>
 
-      <ReviewGrid reviews={reviewsByDate} />
+      <ReviewGrid reviews={reviews} />
     </div>
   );
 }

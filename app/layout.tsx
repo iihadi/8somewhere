@@ -1,8 +1,6 @@
 import type { Metadata } from "next";
 import { Inter, Fraunces } from "next/font/google";
 import "./globals.css";
-import Nav from "@/components/Nav";
-import Footer from "@/components/Footer";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -17,7 +15,9 @@ const fraunces = Fraunces({
 });
 
 export const metadata: Metadata = {
-  metadataBase: new URL("https://example.vercel.app"),
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_SITE_URL ?? "https://example.vercel.app"
+  ),
   title: {
     default: "8somewhere — restaurant reviews",
     template: "%s — 8somewhere",
@@ -27,8 +27,7 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     title: "8somewhere — restaurant reviews",
-    description:
-      "Every restaurant I've eaten at, written up honestly.",
+    description: "Every restaurant I've eaten at, written up honestly.",
   },
 };
 
@@ -39,11 +38,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" className={`${inter.variable} ${fraunces.variable}`}>
-      <body className="min-h-screen flex flex-col">
-        <Nav />
-        <main className="flex-1">{children}</main>
-        <Footer />
-      </body>
+      <body>{children}</body>
     </html>
   );
 }

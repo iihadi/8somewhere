@@ -1,9 +1,14 @@
 import type { Tier } from "@/lib/tiers";
-import { TIERS } from "@/lib/tiers";
 
 export type Dish = {
   name: string;
   note: string;
+};
+
+export type Photo = {
+  url: string;
+  width: number;
+  height: number;
 };
 
 export type Review = {
@@ -34,6 +39,8 @@ export type Review = {
   /** Each string is a paragraph */
   body: string[];
   tags: string[];
+  /** Uploaded via /edit. Empty until photos are added. */
+  photos?: Photo[];
   /** Permanently closed */
   closed?: boolean;
   /** Been back at least once */
@@ -51,7 +58,7 @@ export type Review = {
  * adds no sensory detail that wasn't in the source — if a dish isn't
  * named in the ledger, it isn't named here.
  */
-export const reviews: Review[] = [
+export const seedReviews: Review[] = [
   /* ------------------------------------------------------------------ */
   /* LOVED — benchmark tier                                             */
   /* ------------------------------------------------------------------ */
@@ -944,44 +951,3 @@ export const wishlist: WishlistItem[] = [
     note: "Booked ahead. Not been yet.",
   },
 ];
-
-/* ------------------------------------------------------------------ */
-/* Derived helpers                                                    */
-/* ------------------------------------------------------------------ */
-
-/** Undated visits sort to the bottom rather than to 1970. */
-function sortKey(r: Review) {
-  return r.visitedAt ? +new Date(r.visitedAt) : -Infinity;
-}
-
-export const reviewsByDate = [...reviews].sort((a, b) => sortKey(b) - sortKey(a));
-
-export const reviewsByTier = [...reviews].sort(
-  (a, b) =>
-    TIERS[a.tier].order - TIERS[b.tier].order || sortKey(b) - sortKey(a)
-);
-
-export function getReview(slug: string) {
-  return reviews.find((r) => r.slug === slug);
-}
-
-export const cities = Array.from(new Set(reviews.map((r) => r.city))).sort();
-
-export const tierCounts = reviews.reduce(
-  (acc, r) => {
-    acc[r.tier] = (acc[r.tier] ?? 0) + 1;
-    return acc;
-  },
-  {} as Record<Tier, number>
-);
-
-export const stats = {
-  total: reviews.length,
-  cities: cities.length,
-  countries: new Set(reviews.map((r) => r.country)).size,
-  loved: tierCounts.loved ?? 0,
-  repeats: reviews.filter((r) => r.revisited).length,
-  /** The stated benchmark, not a computed maximum. */
-  benchmark: reviews.find((r) => r.slug === "row-on-5")!,
-  openQuestions: reviews.filter((r) => r.needsCheck).length,
-};

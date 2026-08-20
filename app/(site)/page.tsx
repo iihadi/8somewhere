@@ -1,19 +1,26 @@
 import Link from "next/link";
-import { reviews, reviewsByDate, stats } from "@/data/reviews";
+import { getAllReviews } from "@/lib/repo";
+import { getStats, sortByDate } from "@/lib/derive";
 import ReviewCard from "@/components/ReviewCard";
 import Reveal from "@/components/Reveal";
 import Hero from "@/components/Hero";
 import TierBadge from "@/components/TierBadge";
 import { formatShortDate } from "@/lib/format";
 
-export default function Home() {
-  const recent = reviewsByDate.filter((r) => r.visitedAt).slice(0, 6);
+export const dynamic = "force-dynamic";
+
+export default async function Home() {
+  const reviews = await getAllReviews();
+  const stats = getStats(reviews);
+  const recent = sortByDate(reviews)
+    .filter((r) => r.visitedAt)
+    .slice(0, 6);
   const loved = reviews.filter((r) => r.tier === "loved");
   const avoid = reviews.filter((r) => r.tier === "avoid");
 
   return (
     <>
-      <Hero />
+      <Hero stats={stats} tileReviews={sortByDate(reviews)} />
 
       {/* ---- Stats strip ---- */}
       <section className="mx-auto max-w-6xl px-6">
@@ -41,16 +48,18 @@ export default function Home() {
           <h2 className="mt-2 font-display text-4xl sm:text-5xl">
             Three stars
           </h2>
-          <p className="mt-4 max-w-xl text-muted">
-            Everything else gets measured against{" "}
-            <Link
-              href={`/reviews/${stats.benchmark.slug}`}
-              className="text-cream underline decoration-ember/40 underline-offset-4 transition-colors hover:decoration-ember"
-            >
-              {stats.benchmark.name}
-            </Link>
-            . These are the ones that came closest.
-          </p>
+          {stats.benchmark && (
+            <p className="mt-4 max-w-xl text-muted">
+              Everything else gets measured against{" "}
+              <Link
+                href={`/reviews/${stats.benchmark.slug}`}
+                className="text-cream underline decoration-ember/40 underline-offset-4 transition-colors hover:decoration-ember"
+              >
+                {stats.benchmark.name}
+              </Link>
+              . These are the ones that came closest.
+            </p>
+          )}
         </Reveal>
 
         <ol className="divide-y divide-line overflow-hidden rounded-2xl border border-line bg-surface">

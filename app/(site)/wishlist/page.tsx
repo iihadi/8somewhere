@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { wishlist } from "@/data/reviews";
+import { wishlist } from "@/data/seed-reviews";
 import { formatDate } from "@/lib/format";
 import Reveal from "@/components/Reveal";
 

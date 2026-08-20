@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { stats, cities, tierCounts } from "@/data/reviews";
+import { getAllReviews } from "@/lib/repo";
+import { getCities, getStats, getTierCounts } from "@/lib/derive";
 import { TIERS, TIER_ORDER } from "@/lib/tiers";
 import Reveal from "@/components/Reveal";
 import TierBadge from "@/components/TierBadge";
@@ -10,7 +11,14 @@ export const metadata: Metadata = {
   description: "What this site is and how the verdicts work.",
 };
 
-export default function AboutPage() {
+export const dynamic = "force-dynamic";
+
+export default async function AboutPage() {
+  const reviews = await getAllReviews();
+  const stats = getStats(reviews);
+  const cities = getCities(reviews);
+  const tierCounts = getTierCounts(reviews);
+
   return (
     <div className="mx-auto max-w-2xl px-6 pt-20">
       <Reveal className="space-y-6">
@@ -24,16 +32,21 @@ export default function AboutPage() {
         </p>
 
         <p className="leading-[1.85] text-cream/80">
-          {stats.total} places across {cities.join(", ")}. The whole thing
-          is graded against{" "}
-          <Link
-            href={`/reviews/${stats.benchmark.slug}`}
-            className="text-cream underline decoration-ember/40 underline-offset-4 transition-colors hover:decoration-ember"
-          >
-            {stats.benchmark.name}
-          </Link>
-          , which is the favourite and the fixed point everything else
-          moves relative to.
+          {stats.total} places across {cities.join(", ")}.
+          {stats.benchmark && (
+            <>
+              {" "}
+              The whole thing is graded against{" "}
+              <Link
+                href={`/reviews/${stats.benchmark.slug}`}
+                className="text-cream underline decoration-ember/40 underline-offset-4 transition-colors hover:decoration-ember"
+              >
+                {stats.benchmark.name}
+              </Link>
+              , which is the favourite and the fixed point everything else
+              moves relative to.
+            </>
+          )}
         </p>
       </Reveal>
 

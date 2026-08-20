@@ -2,8 +2,9 @@
 
 import Link from "next/link";
 import { motion, type Variants } from "framer-motion";
-import { stats, reviewsByDate } from "@/data/reviews";
-import { placeholderGradient, coverFor } from "@/lib/photos";
+import type { Review } from "@/data/seed-reviews";
+import type { SiteStats } from "@/lib/derive";
+import { placeholderGradient } from "@/lib/photos";
 
 const EXPO = [0.16, 1, 0.3, 1] as const;
 
@@ -16,9 +17,14 @@ const line: Variants = {
   }),
 };
 
-export default function Hero() {
-  // A few slugs to build the drifting tile strip behind the headline.
-  const tiles = reviewsByDate.slice(0, 8);
+export default function Hero({
+  stats,
+  tileReviews,
+}: {
+  stats: SiteStats;
+  tileReviews: Review[];
+}) {
+  const tiles = tileReviews.slice(0, 8);
 
   return (
     <section className="relative overflow-hidden pb-24 pt-24 sm:pt-32">
@@ -36,14 +42,14 @@ export default function Hero() {
           transition={{ duration: 46, repeat: Infinity, ease: "linear" }}
         >
           {[...tiles, ...tiles].map((r, i) => {
-            const cover = coverFor(r.slug);
+            const cover = r.photos?.[0] ?? null;
             return (
               <div
                 key={`${r.slug}-${i}`}
                 className="h-40 w-64 shrink-0 rounded-2xl border border-line bg-cover bg-center"
                 style={{
                   backgroundImage: cover
-                    ? `url(${cover.src})`
+                    ? `url(${cover.url})`
                     : placeholderGradient(r.slug),
                 }}
               />
@@ -109,12 +115,14 @@ export default function Hero() {
           >
             Read the reviews
           </Link>
-          <Link
-            href={`/reviews/${stats.benchmark.slug}`}
-            className="rounded-full border border-line px-6 py-3 text-sm text-muted transition-colors hover:border-ember/50 hover:text-cream"
-          >
-            The benchmark: {stats.benchmark.name}
-          </Link>
+          {stats.benchmark && (
+            <Link
+              href={`/reviews/${stats.benchmark.slug}`}
+              className="rounded-full border border-line px-6 py-3 text-sm text-muted transition-colors hover:border-ember/50 hover:text-cream"
+            >
+              The benchmark: {stats.benchmark.name}
+            </Link>
+          )}
         </motion.div>
       </div>
     </section>
