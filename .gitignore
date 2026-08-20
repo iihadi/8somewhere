@@ -13,3 +13,4 @@ public/uploads
 
 .vercel
 .env*
+.import-tmp
