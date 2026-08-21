@@ -15,6 +15,8 @@ import TagInput from "./TagInput";
 import VisitCounter from "./VisitCounter";
 import BadgePicker from "./BadgePicker";
 import { inputCls, labelCls, hintCls } from "./fields";
+import { SLUG_RE, slugify } from "@/lib/slug";
+import { findPossibleDuplicates, type DuplicateCandidate } from "@/lib/duplicates";
 
 type Mode = "create" | "edit";
 type Fields = Omit<Review, "slug">;
@@ -44,12 +46,13 @@ const EMPTY: Fields = {
   lastVisitedAt: undefined,
   badges: [],
   needsCheck: undefined,
+  draft: true,
 };
 
-const SLUG_RE = /^[a-z0-9]+(-[a-z0-9]+)*$/;
 const PRICES = ["£", "££", "£££", "££££"];
 
 const SECTIONS = [
+  { id: "publish", label: "Publish" },
   { id: "identity", label: "Identity" },
   { id: "visits", label: "Visits" },
   { id: "verdict", label: "Verdict" },
@@ -58,17 +61,18 @@ const SECTIONS = [
   { id: "photos", label: "Photos" },
 ];
 
-function slugify(s: string) {
-  return s
-    .toLowerCase()
-    .trim()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-}
-
 function toFields(initial: Review): Fields {
   const { slug: _slug, ...rest } = initial;
-  return { ...EMPTY, ...rest, photos: initial.photos ?? [], badges: initial.badges ?? [] };
+  // EMPTY defaults draft to true (new reviews start unpublished) — an
+  // existing review being loaded for edit must not inherit that just
+  // because its own `draft` key happens to be absent (i.e. published).
+  return {
+    ...EMPTY,
+    ...rest,
+    photos: initial.photos ?? [],
+    badges: initial.badges ?? [],
+    draft: initial.draft ?? undefined,
+  };
 }
 
 export default function ReviewForm({
@@ -77,12 +81,14 @@ export default function ReviewForm({
   cuisineSuggestions = [],
   tagSuggestions = [],
   citySuggestions = [],
+  existingReviews = [],
 }: {
   mode: Mode;
   initial?: Review;
   cuisineSuggestions?: string[];
   tagSuggestions?: string[];
   citySuggestions?: string[];
+  existingReviews?: DuplicateCandidate[];
 }) {
   const router = useRouter();
 
@@ -159,7 +165,21 @@ export default function ReviewForm({
   function onNameChange(v: string) {
     set("name", v);
     if (mode === "create" && !slugTouched) setSlug(slugify(v));
+    setDupesDismissed(false);
   }
+
+  // ---- duplicate detection ----
+  const [dupesDismissed, setDupesDismissed] = useState(false);
+  const possibleDuplicates = useMemo(
+    () =>
+      findPossibleDuplicates(
+        existingReviews,
+        fields.name,
+        fields.city,
+        mode === "edit" ? initial?.slug : undefined
+      ),
+    [existingReviews, fields.name, fields.city, mode, initial?.slug]
+  );
 
   // ---- cuisine ----
   const cuisine = useMemo(
@@ -228,7 +248,7 @@ export default function ReviewForm({
   }
 
   // ---- save ----
-  const save = useCallback(async () => {
+  const save = useCallback(async (overrideDraft?: boolean) => {
     setError(null);
 
     if (mode === "create" && !SLUG_RE.test(slug)) {
@@ -241,7 +261,9 @@ export default function ReviewForm({
     }
 
     setSaving(true);
-    const payload = { ...fields, slug };
+    const draft = overrideDraft ?? fields.draft;
+    const payload = { ...fields, draft, slug };
+    if (overrideDraft !== undefined) set("draft", overrideDraft);
 
     const res =
       mode === "create"
@@ -259,7 +281,7 @@ export default function ReviewForm({
     if (res.ok) {
       // Clear the guard before navigating, or leaving prompts about
       // changes that were in fact just saved.
-      setBaseline(JSON.stringify({ slug, fields }));
+      setBaseline(JSON.stringify({ slug, fields: { ...fields, draft } }));
       router.push("/edit");
       router.refresh();
       return;
@@ -320,6 +342,37 @@ export default function ReviewForm({
         ))}
       </nav>
 
+      {/* ---- Publish status ---- */}
+      <section id="publish" className="scroll-mt-20">
+        <div
+          className={`flex flex-wrap items-center justify-between gap-3 rounded-2xl border p-4 ${
+            fields.draft
+              ? "border-gold/30 bg-gold/[0.06]"
+              : "border-ember/25 bg-ember/[0.05]"
+          }`}
+        >
+          <div>
+            <p
+              className={`eyebrow ${fields.draft ? "text-gold" : "text-ember"}`}
+            >
+              {fields.draft ? "Draft" : "Published"}
+            </p>
+            <p className="mt-1 text-sm text-muted">
+              {fields.draft
+                ? "Only visible here in /edit — hidden from the site, the sitemap, and the RSS feed."
+                : "Live on the public site."}
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={() => set("draft", fields.draft ? undefined : true)}
+            className="rounded-full border border-line px-4 py-2 text-sm text-cream transition-colors hover:border-ember/40"
+          >
+            {fields.draft ? "Mark as published" : "Unpublish (revert to draft)"}
+          </button>
+        </div>
+      </section>
+
       {/* ---- Identity ---- */}
       <section id="identity" className="scroll-mt-20 space-y-4">
         <p className="eyebrow">Identity</p>
@@ -334,6 +387,40 @@ export default function ReviewForm({
               required
             />
           </div>
+
+          {!dupesDismissed && possibleDuplicates.length > 0 && (
+            <div className="space-y-2 rounded-lg border border-gold/30 bg-gold/[0.06] p-3.5 sm:col-span-2">
+              <div className="flex items-start justify-between gap-3">
+                <p className="text-xs uppercase tracking-wider text-gold">
+                  Possibly already logged
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setDupesDismissed(true)}
+                  className="shrink-0 text-xs text-muted hover:text-cream"
+                >
+                  Dismiss
+                </button>
+              </div>
+              <ul className="space-y-1.5">
+                {possibleDuplicates.map((d) => (
+                  <li key={d.slug}>
+                    <a
+                      href={`/edit/${d.slug}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-sm text-cream underline decoration-line underline-offset-4 hover:decoration-ember"
+                    >
+                      {d.name}
+                    </a>
+                    <span className="ml-2 text-xs text-muted">
+                      {d.city} · {Math.round(d.score * 100)}% similar
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
 
           <div className="space-y-1.5 sm:col-span-2">
             <label className={labelCls}>
@@ -848,12 +935,25 @@ export default function ReviewForm({
           Cancel
         </button>
         <button
-          type="submit"
+          type="button"
           disabled={saving || uploading}
+          onClick={() => void save(true)}
+          className="rounded-full border border-line px-5 py-2.5 text-sm text-muted transition-colors hover:text-cream disabled:opacity-50"
+        >
+          Save as draft
+        </button>
+        <button
+          type="button"
+          disabled={saving || uploading}
+          onClick={() => void save(false)}
           className="flex items-center gap-2 rounded-full bg-cream px-6 py-2.5 text-sm font-medium text-ink transition-opacity disabled:opacity-50"
         >
           {saving && <Spinner />}
-          {saving ? "Saving…" : mode === "create" ? "Create review" : "Save changes"}
+          {saving
+            ? "Saving…"
+            : mode === "create"
+              ? "Publish review"
+              : "Save & publish"}
         </button>
       </div>
     </form>

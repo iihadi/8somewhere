@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getAllReviews } from "@/lib/repo";
-import { withLocation } from "@/lib/derive";
+import { publishedOnly, withLocation } from "@/lib/derive";
 import MapView from "@/components/MapView";
 import Reveal from "@/components/Reveal";
 
@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function MapPage() {
-  const all = await getAllReviews();
+  const all = publishedOnly(await getAllReviews());
   const pinned = withLocation(all);
   const unpinned = all.length - pinned.length;
 

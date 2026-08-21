@@ -32,6 +32,12 @@ export default async function EditDashboard() {
             Export CSV
           </a>
           <Link
+            href="/edit/wishlist"
+            className="rounded-full border border-line px-4 py-2 text-sm text-muted transition-colors hover:text-cream"
+          >
+            Wishlist
+          </Link>
+          <Link
             href="/edit/new"
             className="rounded-full bg-cream px-5 py-2.5 text-sm font-medium text-ink"
           >

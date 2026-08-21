@@ -63,6 +63,7 @@ export async function POST(req: Request) {
     lastVisitedAt:
       visits > 1 ? body.lastVisitedAt?.trim() || undefined : undefined,
     badges: sanitiseBadges(body.badges),
+    draft: body.draft ? true : undefined,
     needsCheck: body.needsCheck?.trim() || undefined,
   };
 

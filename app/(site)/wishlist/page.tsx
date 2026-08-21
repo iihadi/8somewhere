@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { wishlist } from "@/data/seed-reviews";
+import { getWishlist } from "@/lib/repo";
 import { formatDate } from "@/lib/format";
 import Reveal from "@/components/Reveal";
 
@@ -8,7 +8,11 @@ export const metadata: Metadata = {
   description: "Booked, planned, or just sitting on the list.",
 };
 
-export default function WishlistPage() {
+export const dynamic = "force-dynamic";
+
+export default async function WishlistPage() {
+  const wishlist = await getWishlist();
+
   return (
     <div className="mx-auto max-w-3xl px-6 pt-20">
       <Reveal className="mb-12">
@@ -22,7 +26,7 @@ export default function WishlistPage() {
 
       <ul className="divide-y divide-line overflow-hidden rounded-2xl border border-line bg-surface">
         {wishlist.map((w, i) => (
-          <Reveal key={w.name} delay={i * 0.06}>
+          <Reveal key={w.id} delay={i * 0.06}>
             <li className="px-6 py-7">
               <div className="flex flex-wrap items-baseline justify-between gap-3">
                 <h2 className="font-display text-2xl">{w.name}</h2>

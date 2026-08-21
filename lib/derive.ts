@@ -1,7 +1,7 @@
 import type { Review } from "@/data/seed-reviews";
 import { TIERS, type Tier } from "@/lib/tiers";
 import { BADGE_ORDER, type BadgeKey } from "@/lib/badges";
-import { parseCuisine } from "@/lib/cuisine";
+import { parseCuisine, UNSPECIFIED } from "@/lib/cuisine";
 
 /* ------------------------------------------------------------------ */
 /* Visits                                                              */
@@ -237,6 +237,59 @@ export function onThisDay(reviews: Review[], today = new Date()): Review[] {
       return Number(r.visitedAt.slice(0, 4)) !== thisYear;
     })
     .sort((a, b) => sortKey(b) - sortKey(a));
+}
+
+export type RelatedReview = { review: Review; score: number; reason: string };
+
+/**
+ * Other places worth surfacing on a review page beyond "same city" —
+ * same kitchen first, then similar price and verdict. Scored rather
+ * than filtered so the ordering favours the strongest match, and
+ * capped by the caller once it's had a chance to dedupe against
+ * whatever else is already shown (e.g. the same-city block).
+ */
+export function relatedReviews(reviews: Review[], target: Review): RelatedReview[] {
+  const targetFamily = parseCuisine(target.cuisine, target.cuisineFamily).family;
+
+  const scored = reviews
+    .filter((r) => r.slug !== target.slug)
+    .map((r) => {
+      let score = 0;
+      const reasons: string[] = [];
+
+      const family = parseCuisine(r.cuisine, r.cuisineFamily).family;
+      if (family !== UNSPECIFIED && family === targetFamily) {
+        score += 3;
+        reasons.push(family);
+      }
+      if (r.tier === target.tier) {
+        score += 2;
+        reasons.push(TIERS[r.tier].label);
+      }
+      if (target.price && r.price === target.price) {
+        score += 1;
+        reasons.push("similar price");
+      }
+      if (r.city === target.city) {
+        score += 1;
+      }
+
+      return { review: r, score, reason: reasons[0] ?? "" };
+    })
+    .filter((r) => r.score > 0);
+
+  return scored.sort(
+    (a, b) => b.score - a.score || sortKey(b.review) - sortKey(a.review)
+  );
+}
+
+/**
+ * Everything the public site is allowed to show. Every public page,
+ * the sitemap, and the RSS feed must filter through this — /edit is
+ * the only place a draft is visible, deliberately.
+ */
+export function publishedOnly(reviews: Review[]): Review[] {
+  return reviews.filter((r) => !r.draft);
 }
 
 /** Reviews that have coordinates and can therefore be mapped. */

@@ -26,6 +26,7 @@ export default async function NewReviewPage() {
         <ReviewForm
           mode="create"
           cuisineSuggestions={getCuisines(reviews)}
+          existingReviews={reviews.map((r) => ({ slug: r.slug, name: r.name, city: r.city }))}
           citySuggestions={getCities(reviews)}
           tagSuggestions={getTags(reviews)}
         />
