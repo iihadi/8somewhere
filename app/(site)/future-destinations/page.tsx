@@ -47,7 +47,7 @@ export default async function FutureDestinationsPage() {
 
       {destinations.length === 0 && (
         <p className="rounded-2xl border border-dashed border-line py-20 text-center text-muted">
-          Nothing on the list. Suspicious.
+          Nothing on the list. Suspicious...
         </p>
       )}
     </div>

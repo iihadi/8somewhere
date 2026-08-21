@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { getAllReviews } from "@/lib/repo";
+import { getAllReviews, getWishlist } from "@/lib/repo";
 import { getStats, onThisDay, publishedOnly, sortByDate } from "@/lib/derive";
 import ReviewCard from "@/components/ReviewCard";
 import Badges from "@/components/Badges";
@@ -10,6 +10,7 @@ import ClosedBadge from "@/components/ClosedBadge";
 import AnimatedNumber from "@/components/AnimatedNumber";
 import { formatShortDate } from "@/lib/format";
 import { sortFeatured } from "@/lib/derive";
+import StylePill from "@/components/StylePill";
 
 export const dynamic = "force-dynamic";
 
@@ -34,6 +35,7 @@ export default async function Home() {
   const mustVisit = reviews.filter((r) =>
     (r.badges ?? []).includes("must-visit")
   );
+  const futureDestinations = await getWishlist();
 
   return (
     <>
@@ -94,6 +96,53 @@ export default async function Home() {
         </section>
       )}
 
+      {/* ---- Three stars ---- */}
+      {loved.length > 0 && (
+        <section className="mx-auto mt-28 max-w-6xl px-6">
+          <Reveal className="mb-10">
+            <p className="eyebrow">★ ★ ★</p>
+            <h2 className="mt-2 font-display text-4xl sm:text-5xl">
+              Three stars
+            </h2>
+            <p className="mt-4 max-w-xl text-muted">
+              For the exceptional meal. These are the restaurants that are worth going out of your way for!
+            </p>
+          </Reveal>
+
+          <ol className="divide-y divide-line overflow-hidden rounded-2xl border border-line bg-surface">
+            {loved.map((r, i) => (
+              <Reveal key={r.slug} delay={i * 0.04}>
+                <li>
+                  <Link
+                    href={`/reviews/${r.slug}`}
+                    className="group flex items-center gap-5 px-6 py-5 transition-colors hover:bg-surface-2"
+                  >
+                    <span className="font-display text-2xl text-muted transition-colors group-hover:text-ember">
+                      {String(i + 1).padStart(2, "0")}
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="flex flex-wrap items-center gap-2">
+                        <span className="truncate font-display text-xl">
+                          {r.name}
+                        </span>
+                        {r.closed && <ClosedBadge size="sm" />}
+                      </span>
+                      <span className="block truncate text-sm text-muted">
+                        {r.cuisine} · {r.city}
+                        {r.visitedAt && ` · ${formatShortDate(r.visitedAt)}`}
+                      </span>
+                    </span>
+                    <span className="hidden max-w-xs shrink-0 text-right text-sm text-muted lg:block">
+                      {r.verdict}
+                    </span>
+                  </Link>
+                </li>
+              </Reveal>
+            ))}
+          </ol>
+        </section>
+      )}
+
       {/* ---- Must visit ---- */}
       {mustVisit.length > 0 && (
         <section className="mx-auto mt-28 max-w-6xl px-6">
@@ -136,61 +185,6 @@ export default async function Home() {
         </section>
       )}
 
-      {/* ---- Three stars ---- */}
-      {loved.length > 0 && (
-        <section className="mx-auto mt-28 max-w-6xl px-6">
-          <Reveal className="mb-10">
-            <p className="eyebrow">★ ★ ★</p>
-            <h2 className="mt-2 font-display text-4xl sm:text-5xl">
-              Three stars
-            </h2>
-            {stats.benchmark && (
-              <p className="mt-4 max-w-xl text-muted">
-                Everything else gets measured against{" "}
-                <Link
-                  href={`/reviews/${stats.benchmark.slug}`}
-                  className="text-cream underline decoration-ember/40 underline-offset-4 transition-colors hover:decoration-ember"
-                >
-                  {stats.benchmark.name}
-                </Link>
-                . These are the ones that came closest.
-              </p>
-            )}
-          </Reveal>
-
-          <ol className="divide-y divide-line overflow-hidden rounded-2xl border border-line bg-surface">
-            {loved.map((r, i) => (
-              <Reveal key={r.slug} delay={i * 0.04}>
-                <li>
-                  <Link
-                    href={`/reviews/${r.slug}`}
-                    className="group flex items-center gap-5 px-6 py-5 transition-colors hover:bg-surface-2"
-                  >
-                    <span className="font-display text-2xl text-muted transition-colors group-hover:text-ember">
-                      {String(i + 1).padStart(2, "0")}
-                    </span>
-                    <span className="min-w-0 flex-1">
-                      <span className="flex flex-wrap items-center gap-2">
-                        <span className="truncate font-display text-xl">
-                          {r.name}
-                        </span>
-                        {r.closed && <ClosedBadge size="sm" />}
-                      </span>
-                      <span className="block truncate text-sm text-muted">
-                        {r.cuisine} · {r.city}
-                        {r.visitedAt && ` · ${formatShortDate(r.visitedAt)}`}
-                      </span>
-                    </span>
-                    <span className="hidden max-w-xs shrink-0 text-right text-sm text-muted lg:block">
-                      {r.verdict}
-                    </span>
-                  </Link>
-                </li>
-              </Reveal>
-            ))}
-          </ol>
-        </section>
-      )}
 
       {/* ---- Recent ---- */}
       {recent.length > 0 && (
@@ -245,6 +239,36 @@ export default async function Home() {
                     </span>
                     <TierBadge tier={r.tier} size="sm" />
                   </Link>
+                </li>
+              </Reveal>
+            ))}
+          </ul>
+        </section>
+      )}
+
+      {/* future destinations */}
+      {futureDestinations.length > 0 && (
+        <section className="mx-auto mt-28 max-w-6xl px-6">
+          <Reveal className="mb-10">
+            <p className="eyebrow">Future destinations</p>
+            <h2 className="mt-2 font-display text-4xl sm:text-5xl">
+              A list of restaurants I&rsquo;d like to visit
+            </h2>
+          </Reveal>
+          <ul className="divide-y divide-line overflow-hidden rounded-2xl border border-line bg-surface">
+            {futureDestinations.map((d, i) => (
+              <Reveal key={d.id} delay={i * 0.06}>
+                <li className="px-6 py-7">
+                  <div className="flex flex-wrap items-baseline justify-between gap-3">
+                    <h2 className="font-display text-2xl">{d.name}</h2>
+                    <span className="text-sm text-muted">{d.city}</span>
+                  </div>
+                  {d.cuisine && (
+                    <p className="mt-3">
+                      <StylePill size="md">{d.cuisine}</StylePill>
+                    </p>
+                  )}
+                  <p className="mt-3 leading-relaxed text-muted">{d.note}</p>
                 </li>
               </Reveal>
             ))}

@@ -28,10 +28,7 @@ export default async function CuisinesPage() {
         <h1 className="mt-3 font-display text-5xl sm:text-6xl">Cuisines</h1>
         <p className="mt-4 max-w-xl text-muted">
           {groups.length} kinds of cooking across {reviews.length}{" "}
-          restaurants, most-visited first. Kitchens are grouped by what
-          they cook, not by how the entry was typed — &ldquo;French
-          tasting menu&rdquo; and &ldquo;Modern French&rdquo; both live
-          under French.
+          restaurants, most-visited first. How does your favorite cuisine stack up?
         </p>
       </Reveal>
 

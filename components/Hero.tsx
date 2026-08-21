@@ -7,6 +7,7 @@ import type { SiteStats } from "@/lib/derive";
 import { placeholderGradient } from "@/lib/photos";
 import { usePrefersReducedMotion } from "@/lib/motion";
 import LogoMark from "@/components/LogoMark";
+import Brand from "./Brand";
 
 const EXPO = [0.16, 1, 0.3, 1] as const;
 
@@ -77,7 +78,7 @@ export default function Hero({
           transition={{ duration: reduce ? 0 : 0.8, delay: reduce ? 0 : 0.05 }}
           className="eyebrow"
         >
-          A running record of everywhere I&rsquo;ve eaten
+          A record when I&rsquo;ve
         </motion.p>
 
         {/*
@@ -99,21 +100,7 @@ export default function Hero({
               animate="show"
               className="block"
             >
-              <LogoMark
-                className="-ml-[0.06em] h-[1.55em] w-[1.6em] drop-shadow-[0_0_38px_rgba(255,138,61,0.28)]"
-                position="left bottom"
-              />
-            </motion.span>
-          </span>
-          <span aria-hidden className="block overflow-hidden">
-            <motion.span
-              custom={1}
-              variants={reduce ? lineReduced : line}
-              initial="hidden"
-              animate="show"
-              className="-mt-[0.24em] block italic"
-            >
-              somewhere
+              <Brand />
             </motion.span>
           </span>
         </h1>
@@ -125,8 +112,7 @@ export default function Hero({
           className="mt-8 max-w-xl text-lg leading-relaxed text-muted"
         >
           {stats.total} restaurants across {stats.cities} cities, ranked by
-          whether I&rsquo;d actually go back. Every verdict here is mine,
-          quoted as I wrote it down at the time.
+          whether I&rsquo;d actually go back. Every verdict here is mine, but man am i not a food critic...
         </motion.p>
 
         <motion.div

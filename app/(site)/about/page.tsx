@@ -30,25 +30,6 @@ export default async function AboutPage() {
           restaurant worth logging, with the verdict I actually gave it at
           the time rather than a score invented afterwards.
         </p>
-
-        <p className="leading-[1.85] text-cream/80">
-          {stats.total} places across {cities.join(", ")}.
-          {stats.benchmark && (
-            <>
-              {" "}
-              The whole thing is graded against{" "}
-              <Link
-                href={`/reviews/${stats.benchmark.slug}`}
-                className="text-cream underline decoration-ember/40 underline-offset-4 transition-colors hover:decoration-ember"
-              >
-                {stats.benchmark.name}
-              </Link>
-              , which is the favourite and the fixed point everything else
-              moves relative to.
-            </>
-          )}
-        </p>
-
         <p className="leading-[1.85] text-cream/80">
           The homepage&rsquo;s &ldquo;Three stars&rdquo; list is curated by
           hand rather than sorted automatically — I can drag it into
@@ -56,7 +37,6 @@ export default async function AboutPage() {
           whatever the data happens to fall into.
         </p>
       </Reveal>
-
       <Reveal delay={0.1} className="mt-16 space-y-4">
         <p className="eyebrow">How the scoring works</p>
         <p className="text-sm leading-relaxed text-muted">
@@ -80,7 +60,6 @@ export default async function AboutPage() {
           ))}
         </ul>
       </Reveal>
-
       <Reveal delay={0.13} className="mt-16 space-y-4">
         <p className="eyebrow">Getting around</p>
         <p className="leading-[1.85] text-cream/80">

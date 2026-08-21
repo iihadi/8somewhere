@@ -1,5 +1,5 @@
 import Link from "next/link";
-import Brand from "@/components/Brand";
+import LogoMark from "@/components/LogoMark";
 
 export default function Footer({
   total,
@@ -12,10 +12,12 @@ export default function Footer({
     <footer className="mt-32 border-t border-line">
       <div className="mx-auto flex max-w-6xl flex-col gap-6 px-6 py-12 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <p className="font-display text-2xl"><Brand /></p>
+          <p className="font-display text-2xl"><LogoMark
+            className="-ml-[0.06em] h-[1.55em] w-[1.6em] drop-shadow-[0_0_38px_rgba(255,138,61,0.28)]"
+            position="left bottom"
+          />somewhere</p>
           <p className="mt-1.5 max-w-sm text-sm text-muted">
-            {total} meals across {cities} cities. Dates pulled from a
-            calendar I should probably clean up.
+            An aggregate of my dining experiences. Made in Next.js and hosted on Vercel.
           </p>
         </div>
         <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm text-muted">
