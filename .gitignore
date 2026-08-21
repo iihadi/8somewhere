@@ -9,6 +9,7 @@ next-env.d.ts
 
 # Local dev fallback storage (used only when BLOB_READ_WRITE_TOKEN is unset)
 data/reviews.local.json
+data/wishlist.local.json
 public/uploads
 
 .vercel

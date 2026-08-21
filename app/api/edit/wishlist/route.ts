@@ -18,7 +18,7 @@ export async function POST(req: Request) {
     name: body.name.trim(),
     city: body.city?.trim() || "",
     note: body.note?.trim() || "",
-    plannedFor: body.plannedFor?.trim() || undefined,
+    cuisine: body.cuisine?.trim() || undefined,
   });
 
   return NextResponse.json({ ok: true, item });

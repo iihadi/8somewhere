@@ -5,6 +5,7 @@ import { motion, type Variants } from "framer-motion";
 import type { Review } from "@/data/seed-reviews";
 import type { SiteStats } from "@/lib/derive";
 import { placeholderGradient } from "@/lib/photos";
+import LogoMark from "@/components/LogoMark";
 
 const EXPO = [0.16, 1, 0.3, 1] as const;
 
@@ -72,10 +73,10 @@ export default function Hero({
 
         {/*
           The mark replaces the "8" outright rather than sitting beside
-          it — it *is* the 8. It's painted as a mask over the ember→gold
-          gradient the "8" used to carry, so the drawing picks up the
-          brand colour instead of staying flat cream. The accessible
-          name lives on the <h1>; the drawing itself is decorative.
+          it — it *is* the 8. LogoMark paints it as a mask over the
+          ember→gold gradient, so the drawing picks up the brand colour
+          instead of staying flat cream. The accessible name lives on
+          the <h1>; the drawing itself is decorative.
         */}
         <h1
           aria-label="8somewhere"
@@ -89,18 +90,9 @@ export default function Hero({
               animate="show"
               className="block"
             >
-              <span
-                className="-ml-[0.06em] block h-[1.55em] w-[1.6em] bg-gradient-to-br from-ember to-gold drop-shadow-[0_0_38px_rgba(255,138,61,0.28)]"
-                style={{
-                  WebkitMaskImage: "url(/logo-mark.png)",
-                  maskImage: "url(/logo-mark.png)",
-                  WebkitMaskSize: "contain",
-                  maskSize: "contain",
-                  WebkitMaskRepeat: "no-repeat",
-                  maskRepeat: "no-repeat",
-                  WebkitMaskPosition: "left bottom",
-                  maskPosition: "left bottom",
-                }}
+              <LogoMark
+                className="-ml-[0.06em] h-[1.55em] w-[1.6em] drop-shadow-[0_0_38px_rgba(255,138,61,0.28)]"
+                position="left bottom"
               />
             </motion.span>
           </span>

@@ -31,8 +31,8 @@ export default function Footer({
           <Link href="/stats" className="hover:text-cream transition-colors">
             Stats
           </Link>
-          <Link href="/wishlist" className="hover:text-cream transition-colors">
-            Wishlist
+          <Link href="/future-destinations" className="hover:text-cream transition-colors">
+            Future destinations
           </Link>
           <Link href="/about" className="hover:text-cream transition-colors">
             About

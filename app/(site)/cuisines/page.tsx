@@ -3,8 +3,11 @@ import Link from "next/link";
 import { getAllReviews } from "@/lib/repo";
 import { groupByCuisine, publishedOnly, stylesInGroup } from "@/lib/derive";
 import { formatShortDate } from "@/lib/format";
+import { parseCuisine } from "@/lib/cuisine";
 import Stars from "@/components/Stars";
 import Badges from "@/components/Badges";
+import ClosedBadge from "@/components/ClosedBadge";
+import StylePill from "@/components/StylePill";
 import Reveal from "@/components/Reveal";
 
 export const metadata: Metadata = {
@@ -60,26 +63,33 @@ export default async function CuisinesPage() {
               )}
 
               <ul className="divide-y divide-line overflow-hidden rounded-2xl border border-line bg-surface">
-                {g.reviews.map((r) => (
-                  <li key={r.slug}>
-                    <Link
-                      href={`/reviews/${r.slug}`}
-                      className="flex flex-wrap items-center gap-x-4 gap-y-1 px-5 py-4 transition-colors hover:bg-surface-2"
-                    >
-                      <span className="min-w-0 flex-1">
-                        <span className="block truncate font-display text-lg">
-                          {r.name}
+                {g.reviews.map((r) => {
+                  const style = parseCuisine(r.cuisine, r.cuisineFamily).style;
+                  return (
+                    <li key={r.slug}>
+                      <Link
+                        href={`/reviews/${r.slug}`}
+                        className="flex flex-wrap items-center gap-x-4 gap-y-1 px-5 py-4 transition-colors hover:bg-surface-2"
+                      >
+                        <span className="min-w-0 flex-1">
+                          <span className="flex flex-wrap items-center gap-2">
+                            <span className="truncate font-display text-lg">
+                              {r.name}
+                            </span>
+                            {style && <StylePill>{style}</StylePill>}
+                            {r.closed && <ClosedBadge size="sm" />}
+                          </span>
+                          <span className="block truncate text-xs text-muted">
+                            {r.city}
+                            {r.visitedAt && ` · ${formatShortDate(r.visitedAt)}`}
+                          </span>
                         </span>
-                        <span className="block truncate text-xs text-muted">
-                          {r.city}
-                          {r.visitedAt && ` · ${formatShortDate(r.visitedAt)}`}
-                        </span>
-                      </span>
-                      <Badges badges={r.badges} size="sm" limit={1} />
-                      <Stars tier={r.tier} size="sm" />
-                    </Link>
-                  </li>
-                ))}
+                        <Badges badges={r.badges} size="sm" limit={1} />
+                        <Stars tier={r.tier} size="sm" />
+                      </Link>
+                    </li>
+                  );
+                })}
               </ul>
             </section>
           </Reveal>

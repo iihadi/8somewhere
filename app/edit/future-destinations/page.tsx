@@ -3,13 +3,13 @@ import WishlistManager from "@/components/edit/WishlistManager";
 
 export const dynamic = "force-dynamic";
 
-export default async function EditWishlistPage() {
+export default async function EditFutureDestinationsPage() {
   const items = await getWishlist();
 
   return (
     <div className="space-y-8">
       <div>
-        <p className="eyebrow">Wishlist</p>
+        <p className="eyebrow">Future destinations</p>
         <h1 className="mt-2 font-display text-4xl">Not yet</h1>
         <p className="mt-2 text-muted">
           Booked, planned, or just sitting on the list. Converting an entry

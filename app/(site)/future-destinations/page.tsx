@@ -1,23 +1,25 @@
 import type { Metadata } from "next";
 import { getWishlist } from "@/lib/repo";
-import { formatDate } from "@/lib/format";
 import Reveal from "@/components/Reveal";
+import StylePill from "@/components/StylePill";
 
 export const metadata: Metadata = {
-  title: "Wishlist",
-  description: "Booked, planned, or just sitting on the list.",
+  title: "Future destinations",
+  description: "Where I'm going next — booked, planned, or just on the list.",
 };
 
 export const dynamic = "force-dynamic";
 
-export default async function WishlistPage() {
-  const wishlist = await getWishlist();
+export default async function FutureDestinationsPage() {
+  const destinations = await getWishlist();
 
   return (
     <div className="mx-auto max-w-3xl px-6 pt-20">
       <Reveal className="mb-12">
         <p className="eyebrow">Not yet</p>
-        <h1 className="mt-3 font-display text-5xl sm:text-6xl">Wishlist</h1>
+        <h1 className="mt-3 font-display text-5xl sm:text-6xl">
+          Future destinations
+        </h1>
         <p className="mt-4 text-muted">
           Booked, planned, or just sitting there waiting for a free
           weekend and a functioning bank balance.
@@ -25,25 +27,25 @@ export default async function WishlistPage() {
       </Reveal>
 
       <ul className="divide-y divide-line overflow-hidden rounded-2xl border border-line bg-surface">
-        {wishlist.map((w, i) => (
-          <Reveal key={w.id} delay={i * 0.06}>
+        {destinations.map((d, i) => (
+          <Reveal key={d.id} delay={i * 0.06}>
             <li className="px-6 py-7">
               <div className="flex flex-wrap items-baseline justify-between gap-3">
-                <h2 className="font-display text-2xl">{w.name}</h2>
-                <span className="text-sm text-muted">{w.city}</span>
+                <h2 className="font-display text-2xl">{d.name}</h2>
+                <span className="text-sm text-muted">{d.city}</span>
               </div>
-              <p className="mt-2 leading-relaxed text-muted">{w.note}</p>
-              {w.plannedFor && (
-                <p className="mt-4 inline-flex rounded-full border border-ember/30 bg-ember/10 px-3 py-1.5 text-xs text-ember">
-                  Planned for {formatDate(w.plannedFor)}
+              {d.cuisine && (
+                <p className="mt-3">
+                  <StylePill size="md">{d.cuisine}</StylePill>
                 </p>
               )}
+              <p className="mt-3 leading-relaxed text-muted">{d.note}</p>
             </li>
           </Reveal>
         ))}
       </ul>
 
-      {wishlist.length === 0 && (
+      {destinations.length === 0 && (
         <p className="rounded-2xl border border-dashed border-line py-20 text-center text-muted">
           Nothing on the list. Suspicious.
         </p>

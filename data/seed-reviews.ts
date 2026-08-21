@@ -76,6 +76,13 @@ export type Review = {
   /** Open question flagged in the ledger — needs confirming */
   needsCheck?: string;
   /**
+   * Manual position within the homepage "Three stars" list, set by
+   * dragging the order in /edit/featured. Lower sorts first. Only
+   * meaningful among tier: "loved" reviews; unset ones fall to the end,
+   * most recent first.
+   */
+  featuredRank?: number;
+  /**
    * Saved but not public yet. Drafts are invisible to every public
    * page, the sitemap, and the RSS feed — they only ever show up in
    * /edit, where they're still fully editable.
@@ -960,34 +967,42 @@ export type WishlistItem = {
   name: string;
   city: string;
   note: string;
-  plannedFor?: string;
+  /**
+   * What kind of restaurant it is — "Modern British tasting menu",
+   * "Neighbourhood bistro" — rather than a date, since most of these
+   * aren't booked for a specific day. Can be filled in by hand or via
+   * the restaurant lookup in /edit (see app/api/edit/enrich).
+   */
+  cuisine?: string;
 };
 
-/** Booked or planned, not yet visited. */
+/** Not yet visited — the ones worth going out of the way for eventually. */
 export const wishlist: WishlistItem[] = [
   {
     id: "the-fat-duck",
     name: "The Fat Duck",
     city: "Bray",
-    plannedFor: "2028-11-17",
+    cuisine: "Modern British tasting menu",
     note: "The anchor trip. Dinner, wine pairing and an overnight stay because driving afterwards is not happening.",
   },
   {
     id: "restaurant-journey",
     name: "Restaurant JOURNEY",
     city: "—",
-    note: "Booked ahead. Not been yet.",
+    note: "Booked ahead. Not been yet — kind of restaurant not confirmed.",
   },
   {
     id: "plenitude",
     name: "Plénitude",
     city: "Paris",
+    cuisine: "Modern French tasting menu",
     note: "Booked ahead. Not been yet.",
   },
   {
     id: "core",
     name: "CORE",
     city: "London",
+    cuisine: "Modern British tasting menu",
     note: "Booked ahead. Not been yet.",
   },
 ];

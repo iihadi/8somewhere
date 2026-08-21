@@ -9,6 +9,7 @@ import { formatShortDate } from "@/lib/format";
 import { returnCount } from "@/lib/derive";
 import TierBadge from "./TierBadge";
 import Badges from "./Badges";
+import ClosedBadge from "./ClosedBadge";
 
 export default function ReviewCard({
   review,
@@ -66,11 +67,7 @@ export default function ReviewCard({
             </span>
             <TierBadge tier={review.tier} size="sm" />
             <Badges badges={review.badges} size="sm" limit={1} />
-            {review.closed && (
-              <span className="rounded-full bg-ink/70 px-2.5 py-1 text-[0.65rem] uppercase tracking-wider text-muted backdrop-blur-sm">
-                Closed
-              </span>
-            )}
+            {review.closed && <ClosedBadge size="sm" />}
           </div>
         </div>
 

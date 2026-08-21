@@ -16,6 +16,7 @@ import { placeholderGradient } from "@/lib/photos";
 import { formatDate, formatTime } from "@/lib/format";
 import TierBadge from "@/components/TierBadge";
 import Badges from "@/components/Badges";
+import ClosedBadge from "@/components/ClosedBadge";
 import { BADGES } from "@/lib/badges";
 import Reveal from "@/components/Reveal";
 import Gallery from "@/components/Gallery";
@@ -133,11 +134,7 @@ export default async function ReviewPage({ params }: Params) {
                   {revisitLabel(review)}
                 </span>
               )}
-              {review.closed && (
-                <span className="rounded-full border border-line bg-surface/80 px-3 py-1 text-xs text-muted backdrop-blur-sm">
-                  Permanently closed
-                </span>
-              )}
+              {review.closed && <ClosedBadge />}
             </div>
 
             <h1 className="mt-5 text-balance font-display text-4xl leading-[1.05] sm:text-5xl lg:text-6xl">

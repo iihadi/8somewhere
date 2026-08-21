@@ -32,10 +32,16 @@ export default async function EditDashboard() {
             Export CSV
           </a>
           <Link
-            href="/edit/wishlist"
+            href="/edit/featured"
             className="rounded-full border border-line px-4 py-2 text-sm text-muted transition-colors hover:text-cream"
           >
-            Wishlist
+            Reorder three stars
+          </Link>
+          <Link
+            href="/edit/future-destinations"
+            className="rounded-full border border-line px-4 py-2 text-sm text-muted transition-colors hover:text-cream"
+          >
+            Future destinations
           </Link>
           <Link
             href="/edit/new"

@@ -1,4 +1,4 @@
-import Image from "next/image";
+import LogoMark from "@/components/LogoMark";
 
 /**
  * Full-height loading state, shown by Next's loading.tsx convention
@@ -9,9 +9,7 @@ export default function LoadingScreen({ label = "Loading" }: { label?: string })
   return (
     <div className="grid min-h-[70vh] place-items-center px-6">
       <div className="flex flex-col items-center gap-4">
-        <div className="relative h-14 w-14 animate-pulse">
-          <Image src="/logo-mark.png" alt="" fill className="object-contain opacity-70" />
-        </div>
+        <LogoMark className="h-14 w-14 animate-pulse opacity-80" />
         <p className="eyebrow flex items-center gap-2">
           {label}
           <span className="flex gap-0.5">
