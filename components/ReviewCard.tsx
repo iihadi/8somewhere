@@ -2,11 +2,14 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import { useRef, type PointerEvent } from "react";
 import { motion } from "framer-motion";
 import type { Review } from "@/data/seed-reviews";
 import { placeholderGradient } from "@/lib/photos";
 import { formatShortDate } from "@/lib/format";
 import { returnCount } from "@/lib/derive";
+import { usePrefersReducedMotion } from "@/lib/motion";
+import { TIERS } from "@/lib/tiers";
 import TierBadge from "./TierBadge";
 import Badges from "./Badges";
 import ClosedBadge from "./ClosedBadge";
@@ -22,22 +25,47 @@ export default function ReviewCard({
 }) {
   const cover = review.photos?.[0] ?? null;
   const back = returnCount(review);
+  const reduce = usePrefersReducedMotion();
+  const accent = TIERS[review.tier].accent;
+
+  // Cursor-reactive spotlight: tracks the pointer via CSS custom
+  // properties on the anchor itself (no React re-render per move), so
+  // it's cheap even on a dense grid. Real-time pointer tracking isn't
+  // the kind of automatic motion prefers-reduced-motion targets, so
+  // this stays active regardless of that setting.
+  const cardRef = useRef<HTMLAnchorElement>(null);
+  function onPointerMove(e: PointerEvent<HTMLAnchorElement>) {
+    const el = cardRef.current;
+    if (!el) return;
+    const rect = el.getBoundingClientRect();
+    el.style.setProperty("--x", `${((e.clientX - rect.left) / rect.width) * 100}%`);
+    el.style.setProperty("--y", `${((e.clientY - rect.top) / rect.height) * 100}%`);
+  }
 
   return (
     <motion.article
-      initial={{ opacity: 0, y: 28 }}
+      initial={reduce ? false : { opacity: 0, y: 28 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{
-        duration: 0.55,
-        delay: Math.min(index * 0.05, 0.4),
+        duration: reduce ? 0 : 0.55,
+        delay: reduce ? 0 : Math.min(index * 0.05, 0.4),
         ease: [0.16, 1, 0.3, 1],
       }}
       className="group h-full"
     >
       <Link
+        ref={cardRef}
         href={`/reviews/${review.slug}`}
-        className="flex h-full flex-col overflow-hidden rounded-2xl border border-line bg-surface transition-colors duration-500 hover:border-ember/40"
+        onPointerMove={onPointerMove}
+        className="relative flex h-full flex-col overflow-hidden rounded-2xl border border-line bg-surface transition-colors duration-500 hover:border-ember/40"
       >
+        <span
+          aria-hidden
+          className="pointer-events-none absolute inset-0 z-10 opacity-0 transition-opacity duration-500 group-hover:opacity-100"
+          style={{
+            background: `radial-gradient(380px circle at var(--x, 50%) var(--y, 50%), color-mix(in oklab, ${accent} 22%, transparent), transparent 70%)`,
+          }}
+        />
         <div className="relative aspect-[4/3] overflow-hidden">
           {cover ? (
             <Image

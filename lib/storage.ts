@@ -26,12 +26,12 @@ function blobToken() {
   return process.env.BLOB_READ_WRITE_TOKEN;
 }
 
-function useBlob() {
+function blobEnabled() {
   return Boolean(blobToken());
 }
 
 export async function readReviewsData(): Promise<Review[]> {
-  if (useBlob()) {
+  if (blobEnabled()) {
     let meta;
     try {
       meta = await head(REVIEWS_BLOB_PATH, { token: blobToken() });
@@ -68,7 +68,7 @@ export async function readReviewsData(): Promise<Review[]> {
 }
 
 export async function writeReviewsData(reviews: Review[]): Promise<void> {
-  if (useBlob()) {
+  if (blobEnabled()) {
     // `put()` with addRandomSuffix:false overwrites the existing blob at
     // this path in place — verified empirically, no delete-first dance
     // needed. A prior version of this function deleted the old blob
@@ -93,7 +93,7 @@ const WISHLIST_BLOB_PATH = "data/wishlist.json";
 const LOCAL_WISHLIST_PATH = path.join(process.cwd(), "data", "wishlist.local.json");
 
 export async function readWishlistData(): Promise<WishlistItem[]> {
-  if (useBlob()) {
+  if (blobEnabled()) {
     let meta;
     try {
       meta = await head(WISHLIST_BLOB_PATH, { token: blobToken() });
@@ -125,7 +125,7 @@ export async function readWishlistData(): Promise<WishlistItem[]> {
 }
 
 export async function writeWishlistData(items: WishlistItem[]): Promise<void> {
-  if (useBlob()) {
+  if (blobEnabled()) {
     await put(WISHLIST_BLOB_PATH, JSON.stringify(items, null, 2), {
       access: "public",
       addRandomSuffix: false,
@@ -142,14 +142,19 @@ export async function writeWishlistData(items: WishlistItem[]): Promise<void> {
 /**
  * `pathname` is relative, e.g. "septime/1699999999-dinner.jpg" — the
  * slug as a folder keeps a restaurant's images grouped in both backends.
+ * `folder` picks the top-level Blob prefix ("photos"/"videos") so the
+ * two media kinds stay separable there too; local mode ignores it since
+ * one flat /uploads/<slug>/... tree already works fine for both, files
+ * are named by timestamp.
  */
 export async function uploadImage(
   buffer: Buffer,
   pathname: string,
-  contentType: string
+  contentType: string,
+  folder: "photos" | "videos" = "photos"
 ): Promise<{ url: string }> {
-  if (useBlob()) {
-    const blob = await put(`photos/${pathname}`, buffer, {
+  if (blobEnabled()) {
+    const blob = await put(`${folder}/${pathname}`, buffer, {
       access: "public",
       addRandomSuffix: true,
       contentType,
@@ -166,7 +171,7 @@ export async function uploadImage(
 }
 
 export async function deleteImage(url: string): Promise<void> {
-  if (useBlob() && url.includes("blob.vercel-storage.com")) {
+  if (blobEnabled() && url.includes("blob.vercel-storage.com")) {
     await del(url, { token: blobToken() });
     return;
   }
@@ -180,5 +185,5 @@ export async function deleteImage(url: string): Promise<void> {
 }
 
 export function storageMode(): "blob" | "local" {
-  return useBlob() ? "blob" : "local";
+  return blobEnabled() ? "blob" : "local";
 }

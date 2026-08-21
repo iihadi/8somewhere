@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useEffect, useRef } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import type { Review } from "@/data/seed-reviews";
 import { searchReviews, type SearchHit } from "@/lib/search";
 import { formatShortDate } from "@/lib/format";
@@ -20,7 +21,11 @@ const FIELD_LABEL: Record<SearchHit["field"], string> = {
 };
 
 export default function SearchClient({ reviews }: { reviews: Review[] }) {
-  const [query, setQuery] = useState("");
+  const searchParams = useSearchParams();
+  // Seeds from the command palette's "View all results in Search" handoff
+  // (/search?q=...) — only on first mount, so typing afterward isn't
+  // fought by the URL.
+  const [query, setQuery] = useState(() => searchParams.get("q") ?? "");
   const inputRef = useRef<HTMLInputElement>(null);
 
   // "/" jumps into the search box from anywhere on the page — the

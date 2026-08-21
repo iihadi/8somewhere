@@ -14,6 +14,19 @@ export type Photo = {
   caption?: string;
 };
 
+export type Video = {
+  url: string;
+  width: number;
+  height: number;
+  /** Seconds, read client-side from the file's own metadata before upload. */
+  duration?: number;
+  /** A still frame, captured client-side and uploaded through the existing
+   *  image pipeline — reuses Photo so no new storage code is needed for it. */
+  poster?: Photo;
+  /** Shown under the clip in the lightbox, and used as its accessible label. */
+  caption?: string;
+};
+
 export type Review = {
   /** URL segment. Also the folder name under /public/photos/<slug>/ */
   slug: string;
@@ -53,6 +66,9 @@ export type Review = {
   tags: string[];
   /** Uploaded via /edit. Empty until photos are added. */
   photos?: Photo[];
+  /** Uploaded via /edit. Empty until clips are added. Rendered alongside
+   *  photos in the gallery, appended after them in upload order. */
+  videos?: Video[];
   /** Permanently closed */
   closed?: boolean;
   /**

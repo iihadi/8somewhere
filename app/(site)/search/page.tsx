@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { Suspense } from "react";
 import { getAllReviews } from "@/lib/repo";
 import { publishedOnly } from "@/lib/derive";
 import SearchClient from "@/components/SearchClient";
@@ -25,7 +26,9 @@ export default async function SearchPage() {
         </p>
       </Reveal>
 
-      <SearchClient reviews={reviews} />
+      <Suspense fallback={null}>
+        <SearchClient reviews={reviews} />
+      </Suspense>
     </div>
   );
 }

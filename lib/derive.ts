@@ -46,6 +46,25 @@ export function sortByDate(reviews: Review[]): Review[] {
   return [...reviews].sort((a, b) => sortKey(b) - sortKey(a));
 }
 
+export type Neighbors = { prev: Review | null; next: Review | null };
+
+/**
+ * Chronological neighbors of `target` within `reviews`, ordered the
+ * same way the rest of the site reads the archive: newest-first. So
+ * "next" here means "the next one you'd hit scrolling down the
+ * archive" (older), and "prev" means newer — matching the reading
+ * order everywhere else on the site rather than raw calendar direction.
+ */
+export function chronologicalNeighbors(reviews: Review[], target: Review): Neighbors {
+  const ordered = sortByDate(reviews);
+  const idx = ordered.findIndex((r) => r.slug === target.slug);
+  if (idx === -1) return { prev: null, next: null };
+  return {
+    prev: ordered[idx - 1] ?? null,
+    next: ordered[idx + 1] ?? null,
+  };
+}
+
 export function sortByTier(reviews: Review[]): Review[] {
   return [...reviews].sort(
     (a, b) => TIERS[a.tier].order - TIERS[b.tier].order || sortKey(b) - sortKey(a)
@@ -221,6 +240,30 @@ export function visitsByYear(reviews: Review[]): YearCount[] {
   return Array.from(map.entries())
     .map(([year, count]) => ({ year, count }))
     .sort((a, b) => a.year - b.year);
+}
+
+export type TimelineGroup = { year: number; reviews: Review[] };
+
+/**
+ * Every dated visit, newest-first, grouped by year — the data behind
+ * /timeline. Distinct from visitsByYear above (ascending counts only,
+ * feeds the /stats bar chart) and from onThisDay (single calendar-day
+ * match for the homepage widget). Undated reviews are excluded rather
+ * than sorted to the bottom the way sortByDate does elsewhere — there's
+ * nowhere on a timeline to place them; the page surfaces their count
+ * separately instead.
+ */
+export function timelineGroups(reviews: Review[]): TimelineGroup[] {
+  const dated = sortByDate(reviews.filter((r) => r.visitedAt));
+  const map = new Map<number, Review[]>();
+  for (const r of dated) {
+    const year = Number(r.visitedAt!.slice(0, 4));
+    if (!map.has(year)) map.set(year, []);
+    map.get(year)!.push(r);
+  }
+  return Array.from(map.entries())
+    .sort((a, b) => b[0] - a[0])
+    .map(([year, yearReviews]) => ({ year, reviews: yearReviews }));
 }
 
 export type PriceCount = { price: string; count: number };

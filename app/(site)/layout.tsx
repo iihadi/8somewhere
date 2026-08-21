@@ -2,18 +2,19 @@ import { getAllReviews } from "@/lib/repo";
 import { getStats, publishedOnly } from "@/lib/derive";
 import Nav from "@/components/Nav";
 import Footer from "@/components/Footer";
-import SearchShortcut from "@/components/SearchShortcut";
+import CommandPalette from "@/components/CommandPalette";
 
 export default async function SiteLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const stats = getStats(publishedOnly(await getAllReviews()));
+  const reviews = publishedOnly(await getAllReviews());
+  const stats = getStats(reviews);
 
   return (
     <div className="flex min-h-screen flex-col">
-      <SearchShortcut />
+      <CommandPalette reviews={reviews} />
       <Nav />
       <main className="flex-1">{children}</main>
       <Footer total={stats.total} cities={stats.cities} />

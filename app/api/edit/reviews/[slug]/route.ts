@@ -52,6 +52,7 @@ export async function PUT(req: Request, { params }: Params) {
     body: body.body ?? [],
     tags: body.tags ?? [],
     photos: body.photos ?? [],
+    videos: body.videos ?? [],
     closed: body.closed ?? undefined,
     revisited: visits > 1 ? true : undefined,
     visitCount: visits > 1 ? visits : undefined,
@@ -82,8 +83,14 @@ export async function DELETE(_req: Request, { params }: Params) {
     // nothing but a few KB.
     const { getReview } = await import("@/lib/repo");
     const review = await getReview(slug);
-    if (review?.photos?.length) {
-      await Promise.allSettled(review.photos.map((p) => deleteImage(p.url)));
+    const mediaUrls = [
+      ...(review?.photos ?? []).map((p) => p.url),
+      ...(review?.videos ?? []).flatMap((v) =>
+        [v.url, v.poster?.url].filter((u): u is string => Boolean(u))
+      ),
+    ];
+    if (mediaUrls.length) {
+      await Promise.allSettled(mediaUrls.map((u) => deleteImage(u)));
     }
     await deleteReview(slug);
   } catch (err) {

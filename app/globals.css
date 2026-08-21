@@ -32,16 +32,32 @@ body {
 }
 
 /* Warm ambient glow behind everything, plus a fine grain so the large
-   dark areas don't band on cheap panels. */
+   dark areas don't band on cheap panels. The two radial gradients drift
+   very slowly against each other — an "aurora" so subtle it mostly
+   reads as texture, not motion. Pure CSS, so the prefers-reduced-motion
+   rule below already collapses it. */
 body::before {
   content: "";
   position: fixed;
-  inset: 0;
+  inset: -10%;
   z-index: -2;
+  width: 120%;
+  height: 120%;
   background:
     radial-gradient(60rem 40rem at 15% -10%, rgba(255, 138, 61, 0.14), transparent 60%),
     radial-gradient(50rem 36rem at 90% 10%, rgba(255, 209, 102, 0.08), transparent 60%);
+  background-repeat: no-repeat;
+  animation: aurora-drift 75s ease-in-out infinite alternate;
   pointer-events: none;
+}
+
+@keyframes aurora-drift {
+  0% {
+    background-position: 0% 0%, 100% 0%;
+  }
+  100% {
+    background-position: 6% 4%, 94% 6%;
+  }
 }
 
 body::after {
@@ -82,6 +98,27 @@ body::after {
   *::after {
     animation-duration: 0.001ms !important;
     transition-duration: 0.001ms !important;
+  }
+}
+
+/* Utility: a soft glow-pulse on hover, tinted by whatever accent colour
+   is passed in via the --glow custom property. Used on tier-accented
+   pills (TierBadge, Stars-in-a-badge) where the colour is data-driven
+   per review, so it can't be a fixed Tailwind class. Pure CSS keyframe,
+   already covered by the prefers-reduced-motion rule above. */
+.accent-glow {
+  transition: box-shadow 300ms ease;
+}
+.accent-glow:hover {
+  animation: tier-pulse 1.8s ease-in-out infinite;
+}
+@keyframes tier-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 0 1px var(--glow), 0 0 14px -4px var(--glow);
+  }
+  50% {
+    box-shadow: 0 0 0 1px var(--glow), 0 0 26px -3px var(--glow);
   }
 }
 

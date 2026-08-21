@@ -29,11 +29,12 @@ export default function Badges({
           <span
             key={b}
             title={blurb}
-            className={`inline-flex shrink-0 items-center rounded-full border uppercase tracking-wider ${pad}`}
+            className={`accent-glow inline-flex shrink-0 items-center rounded-full border uppercase tracking-wider ${pad}`}
             style={{
               color: accent,
               borderColor: `color-mix(in oklab, ${accent} 35%, transparent)`,
               backgroundColor: `color-mix(in oklab, ${accent} 12%, transparent)`,
+              ["--glow" as string]: accent,
             }}
           >
             {label}

@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { Dish, Photo, Review } from "@/data/seed-reviews";
+import type { Dish, Photo, Review, Video } from "@/data/seed-reviews";
 import { TIER_ORDER, TIERS, type Tier } from "@/lib/tiers";
 import type { BadgeKey } from "@/lib/badges";
 import { parseCuisine, FAMILY_NAMES, UNSPECIFIED } from "@/lib/cuisine";
@@ -12,6 +12,7 @@ import Stars from "@/components/Stars";
 import Spinner from "@/components/Spinner";
 import DateField from "./DateField";
 import PhotoManager from "./PhotoManager";
+import VideoManager from "./VideoManager";
 import TagInput from "./TagInput";
 import VisitCounter from "./VisitCounter";
 import BadgePicker from "./BadgePicker";
@@ -42,6 +43,7 @@ const EMPTY: Fields = {
   body: [],
   tags: [],
   photos: [],
+  videos: [],
   closed: undefined,
   revisited: undefined,
   visitCount: undefined,
@@ -61,6 +63,7 @@ const SECTIONS = [
   { id: "writeup", label: "Write-up" },
   { id: "dishes", label: "Dishes" },
   { id: "photos", label: "Photos" },
+  { id: "videos", label: "Videos" },
 ];
 
 function toFields(initial: Review): Fields {
@@ -72,6 +75,7 @@ function toFields(initial: Review): Fields {
     ...EMPTY,
     ...rest,
     photos: initial.photos ?? [],
+    videos: initial.videos ?? [],
     badges: initial.badges ?? [],
     draft: initial.draft ?? undefined,
   };
@@ -84,6 +88,7 @@ export default function ReviewForm({
   tagSuggestions = [],
   citySuggestions = [],
   existingReviews = [],
+  storageMode = "local",
 }: {
   mode: Mode;
   initial?: Review;
@@ -91,6 +96,7 @@ export default function ReviewForm({
   tagSuggestions?: string[];
   citySuggestions?: string[];
   existingReviews?: DuplicateCandidate[];
+  storageMode?: "blob" | "local";
 }) {
   const router = useRouter();
 
@@ -102,6 +108,7 @@ export default function ReviewForm({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [videoUploading, setVideoUploading] = useState(false);
 
   /**
    * The snapshot the form was last known to agree with the server on.
@@ -263,6 +270,144 @@ export default function ReviewForm({
     }
   }
 
+  // ---- videos ----
+
+  /** Reads width/height/duration from the file itself, then grabs a
+   *  still frame as a poster JPEG — all client-side, so the server
+   *  never needs to parse video containers. */
+  function readVideoMetadata(
+    file: File
+  ): Promise<{ width: number; height: number; duration: number; poster: Blob | null }> {
+    return new Promise((resolve, reject) => {
+      const el = document.createElement("video");
+      el.preload = "metadata";
+      el.muted = true;
+      el.playsInline = true;
+      const src = URL.createObjectURL(file);
+      el.src = src;
+
+      el.onloadedmetadata = () => {
+        el.currentTime = Math.min(0.1, el.duration / 2 || 0);
+      };
+      el.onseeked = () => {
+        const canvas = document.createElement("canvas");
+        canvas.width = el.videoWidth;
+        canvas.height = el.videoHeight;
+        const ctx = canvas.getContext("2d");
+        ctx?.drawImage(el, 0, 0, canvas.width, canvas.height);
+        canvas.toBlob(
+          (poster) => {
+            URL.revokeObjectURL(src);
+            resolve({
+              width: el.videoWidth,
+              height: el.videoHeight,
+              duration: el.duration,
+              poster,
+            });
+          },
+          "image/jpeg",
+          0.85
+        );
+      };
+      el.onerror = () => {
+        URL.revokeObjectURL(src);
+        reject(new Error("Couldn't read that video file."));
+      };
+    });
+  }
+
+  async function uploadPoster(poster: Blob, slugValue: string): Promise<Photo | undefined> {
+    const form = new FormData();
+    form.append("file", poster, "poster.jpg");
+    const res = await fetch(`/api/edit/upload?slug=${encodeURIComponent(slugValue)}`, {
+      method: "POST",
+      body: form,
+    });
+    const data = await res.json();
+    if (!res.ok) return undefined;
+    return { url: data.url, width: data.width, height: data.height };
+  }
+
+  const uploadVideoFile = useCallback(
+    async (file: File, slugValue: string): Promise<string> => {
+      if (storageMode === "blob") {
+        const { upload } = await import("@vercel/blob/client");
+        const blob = await upload(`${slugValue}/${Date.now()}-${file.name}`, file, {
+          access: "public",
+          handleUploadUrl: "/api/edit/upload-video-token",
+        });
+        return blob.url;
+      }
+      const form = new FormData();
+      form.append("file", file);
+      const res = await fetch(`/api/edit/upload-video?slug=${encodeURIComponent(slugValue)}`, {
+        method: "POST",
+        body: form,
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error ?? "Upload failed.");
+      return data.url as string;
+    },
+    [storageMode]
+  );
+
+  const onVideoUpload = useCallback(
+    async (files: FileList | File[]) => {
+      const list = Array.from(files);
+      if (list.length === 0) return;
+      if (!SLUG_RE.test(slug)) {
+        setError("Set a valid slug before uploading videos.");
+        return;
+      }
+      setVideoUploading(true);
+      setError(null);
+
+      for (const file of list) {
+        try {
+          const meta = await readVideoMetadata(file);
+          const [url, poster] = await Promise.all([
+            uploadVideoFile(file, slug),
+            meta.poster ? uploadPoster(meta.poster, slug) : Promise.resolve(undefined),
+          ]);
+          const video: Video = {
+            url,
+            width: meta.width,
+            height: meta.height,
+            duration: meta.duration,
+            poster,
+          };
+          setFields((f) => ({ ...f, videos: [...(f.videos ?? []), video] }));
+        } catch (err) {
+          setError(
+            err instanceof Error
+              ? `${file.name}: ${err.message}`
+              : `${file.name}: upload failed.`
+          );
+        }
+      }
+      setVideoUploading(false);
+    },
+    [slug, uploadVideoFile]
+  );
+
+  /** Removals are best-effort on the storage side — never block on cleanup. */
+  function onVideosChange(next: Video[]) {
+    const removed = (fields.videos ?? []).filter(
+      (v) => !next.some((n) => n.url === v.url)
+    );
+    set("videos", next);
+    for (const video of removed) {
+      const urls = [video.url, video.poster?.url].filter((u): u is string => Boolean(u));
+      for (const url of urls) {
+        fetch("/api/edit/upload", {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ url }),
+        }).catch(() => {});
+      }
+    }
+  }
+
   // ---- save ----
   const save = useCallback(async (overrideDraft?: boolean) => {
     setError(null);
@@ -323,12 +468,12 @@ export default function ReviewForm({
     function onKey(e: KeyboardEvent) {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "s") {
         e.preventDefault();
-        if (!saving && !uploading) void save();
+        if (!saving && !uploading && !videoUploading) void save();
       }
     }
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [save, saving, uploading]);
+  }, [save, saving, uploading, videoUploading]);
 
   // Closing the tab mid-edit shouldn't silently bin the write-up.
   useEffect(() => {
@@ -944,6 +1089,19 @@ export default function ReviewForm({
         />
       </section>
 
+      {/* ---- Videos ---- */}
+      <section id="videos" className="scroll-mt-20 space-y-4">
+        <p className="eyebrow">Videos</p>
+        <VideoManager
+          videos={fields.videos ?? []}
+          onChange={onVideosChange}
+          onUpload={onVideoUpload}
+          uploading={videoUploading}
+          disabled={!canUpload}
+          disabledHint="Set a slug above before uploading videos — it decides where they're stored."
+        />
+      </section>
+
       {error && (
         <p
           role="alert"
@@ -972,7 +1130,7 @@ export default function ReviewForm({
         </button>
         <button
           type="button"
-          disabled={saving || uploading}
+          disabled={saving || uploading || videoUploading}
           onClick={() => void save(true)}
           className="rounded-full border border-line px-5 py-2.5 text-sm text-muted transition-colors hover:text-cream disabled:opacity-50"
         >
@@ -980,7 +1138,7 @@ export default function ReviewForm({
         </button>
         <button
           type="button"
-          disabled={saving || uploading}
+          disabled={saving || uploading || videoUploading}
           onClick={() => void save(false)}
           className="flex items-center gap-2 rounded-full bg-cream px-6 py-2.5 text-sm font-medium text-ink transition-opacity disabled:opacity-50"
         >

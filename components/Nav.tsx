@@ -6,12 +6,14 @@ import { motion, useScroll, useMotionValueEvent } from "framer-motion";
 import { useState } from "react";
 import Brand from "@/components/Brand";
 import LogoMark from "@/components/LogoMark";
+import { usePrefersReducedMotion } from "@/lib/motion";
 
 const links = [
   { href: "/reviews", label: "Reviews" },
   { href: "/map", label: "Map" },
   { href: "/cuisines", label: "Cuisines" },
   { href: "/stats", label: "Stats" },
+  { href: "/timeline", label: "Timeline" },
   { href: "/future-destinations", label: "Future destinations" },
   { href: "/about", label: "About" },
 ];
@@ -24,14 +26,15 @@ export default function Nav() {
   const pathname = usePathname();
   const { scrollY } = useScroll();
   const [scrolled, setScrolled] = useState(false);
+  const reduce = usePrefersReducedMotion();
 
   useMotionValueEvent(scrollY, "change", (latest) => setScrolled(latest > 12));
 
   return (
     <motion.header
-      initial={{ y: -64, opacity: 0 }}
+      initial={reduce ? false : { y: -64, opacity: 0 }}
       animate={{ y: 0, opacity: 1 }}
-      transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+      transition={{ duration: reduce ? 0 : 0.7, ease: [0.16, 1, 0.3, 1] }}
       className={`sticky top-0 z-50 transition-colors duration-500 ${
         scrolled
           ? "bg-ink/70 backdrop-blur-xl border-b border-line"
@@ -51,7 +54,7 @@ export default function Nav() {
             <Link
               href="/search"
               aria-label="Search"
-              title="Search (press /)"
+              title="Search (⌘K)"
               className={`relative grid h-9 w-9 place-items-center rounded-full transition-colors ${
                 pathname.startsWith("/search")
                   ? "text-cream"
@@ -78,7 +81,11 @@ export default function Nav() {
                     <motion.span
                       layoutId="nav-pill"
                       className="absolute inset-0 rounded-full bg-surface-2 ring-1 ring-line"
-                      transition={{ type: "spring", stiffness: 380, damping: 32 }}
+                      transition={
+                        reduce
+                          ? { duration: 0 }
+                          : { type: "spring", stiffness: 380, damping: 32 }
+                      }
                     />
                   )}
                   <span className="relative">{l.label}</span>
