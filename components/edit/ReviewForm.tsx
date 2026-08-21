@@ -1,16 +1,25 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Dish, Photo, Review } from "@/data/seed-reviews";
 import { TIER_ORDER, TIERS, type Tier } from "@/lib/tiers";
+import type { BadgeKey } from "@/lib/badges";
+import { parseCuisine, FAMILY_NAMES, UNSPECIFIED } from "@/lib/cuisine";
 import type { GeocodeResult } from "@/app/api/edit/geocode/route";
 import Stars from "@/components/Stars";
 import Spinner from "@/components/Spinner";
+import DateField from "./DateField";
+import PhotoManager from "./PhotoManager";
+import TagInput from "./TagInput";
+import VisitCounter from "./VisitCounter";
+import BadgePicker from "./BadgePicker";
+import { inputCls, labelCls, hintCls } from "./fields";
 
 type Mode = "create" | "edit";
+type Fields = Omit<Review, "slug">;
 
-const EMPTY: Omit<Review, "slug"> = {
+const EMPTY: Fields = {
   name: "",
   city: "",
   country: "UK",
@@ -18,7 +27,9 @@ const EMPTY: Omit<Review, "slug"> = {
   lat: undefined,
   lng: undefined,
   cuisine: "",
+  cuisineFamily: undefined,
   visitedAt: null,
+  dateApprox: undefined,
   price: null,
   tier: "unlogged",
   quote: null,
@@ -29,14 +40,23 @@ const EMPTY: Omit<Review, "slug"> = {
   photos: [],
   closed: undefined,
   revisited: undefined,
+  visitCount: undefined,
+  lastVisitedAt: undefined,
+  badges: [],
   needsCheck: undefined,
 };
 
-const inputCls =
-  "w-full rounded-lg border border-line bg-surface px-3.5 py-2.5 text-sm outline-none transition-colors focus:border-ember/50";
-const labelCls = "text-xs uppercase tracking-wider text-muted";
-
 const SLUG_RE = /^[a-z0-9]+(-[a-z0-9]+)*$/;
+const PRICES = ["£", "££", "£££", "££££"];
+
+const SECTIONS = [
+  { id: "identity", label: "Identity" },
+  { id: "visits", label: "Visits" },
+  { id: "verdict", label: "Verdict" },
+  { id: "writeup", label: "Write-up" },
+  { id: "dishes", label: "Dishes" },
+  { id: "photos", label: "Photos" },
+];
 
 function slugify(s: string) {
   return s
@@ -46,46 +66,50 @@ function slugify(s: string) {
     .replace(/^-+|-+$/g, "");
 }
 
+function toFields(initial: Review): Fields {
+  const { slug: _slug, ...rest } = initial;
+  return { ...EMPTY, ...rest, photos: initial.photos ?? [], badges: initial.badges ?? [] };
+}
+
 export default function ReviewForm({
   mode,
   initial,
+  cuisineSuggestions = [],
+  tagSuggestions = [],
+  citySuggestions = [],
 }: {
   mode: Mode;
   initial?: Review;
+  cuisineSuggestions?: string[];
+  tagSuggestions?: string[];
+  citySuggestions?: string[];
 }) {
   const router = useRouter();
 
   const [slug, setSlug] = useState(initial?.slug ?? "");
   const [slugTouched, setSlugTouched] = useState(mode === "edit");
-  const [fields, setFields] = useState<Omit<Review, "slug">>(
-    initial
-      ? {
-          name: initial.name,
-          city: initial.city,
-          country: initial.country,
-          address: initial.address,
-          lat: initial.lat,
-          lng: initial.lng,
-          cuisine: initial.cuisine,
-          visitedAt: initial.visitedAt,
-          price: initial.price,
-          tier: initial.tier,
-          quote: initial.quote,
-          verdict: initial.verdict,
-          dishes: initial.dishes,
-          body: initial.body,
-          tags: initial.tags,
-          photos: initial.photos ?? [],
-          closed: initial.closed,
-          revisited: initial.revisited,
-          needsCheck: initial.needsCheck,
-        }
-      : EMPTY
+  const [fields, setFields] = useState<Fields>(
+    initial ? toFields(initial) : EMPTY
   );
-  const [tagsText, setTagsText] = useState((initial?.tags ?? []).join(", "));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
+
+  /**
+   * The snapshot the form was last known to agree with the server on.
+   * Comparing against it is what makes "unsaved changes" honest — a
+   * timestamp of the last edit would call an undone change dirty.
+   */
+  const [baseline, setBaseline] = useState(() =>
+    JSON.stringify({ slug: initial?.slug ?? "", fields: initial ? toFields(initial) : EMPTY })
+  );
+  const dirty = JSON.stringify({ slug, fields }) !== baseline;
+
+  const canUpload = SLUG_RE.test(slug);
+
+  function set<K extends keyof Fields>(key: K, value: Fields[K]) {
+    setFields((f) => ({ ...f, [key]: value }));
+  }
 
   // ---- location lookup (OpenStreetMap / Nominatim) ----
   const [locQuery, setLocQuery] = useState("");
@@ -132,106 +156,79 @@ export default function ReviewForm({
     setLocOpen(false);
   }
 
-  function clearLocation() {
-    set("lat", undefined);
-    set("lng", undefined);
-  }
-
-  function set<K extends keyof Omit<Review, "slug">>(key: K, value: Omit<Review, "slug">[K]) {
-    setFields((f) => ({ ...f, [key]: value }));
-  }
-
   function onNameChange(v: string) {
     set("name", v);
     if (mode === "create" && !slugTouched) setSlug(slugify(v));
   }
 
+  // ---- cuisine ----
+  const cuisine = useMemo(
+    () => parseCuisine(fields.cuisine, fields.cuisineFamily),
+    [fields.cuisine, fields.cuisineFamily]
+  );
+
   // ---- dishes ----
-  function addDish() {
-    set("dishes", [...fields.dishes, { name: "", note: "" }]);
-  }
   function updateDish(i: number, patch: Partial<Dish>) {
     set(
       "dishes",
       fields.dishes.map((d, idx) => (idx === i ? { ...d, ...patch } : d))
     );
   }
-  function removeDish(i: number) {
-    set("dishes", fields.dishes.filter((_, idx) => idx !== i));
-  }
-
-  // ---- body paragraphs ----
-  function addParagraph() {
-    set("body", [...fields.body, ""]);
-  }
-  function updateParagraph(i: number, value: string) {
-    set("body", fields.body.map((p, idx) => (idx === i ? value : p)));
-  }
-  function removeParagraph(i: number) {
-    set("body", fields.body.filter((_, idx) => idx !== i));
-  }
 
   // ---- photos ----
-  async function onFilesSelected(files: FileList | null) {
-    if (!files || files.length === 0) return;
-    if (!SLUG_RE.test(slug)) {
-      setError("Set a valid slug before uploading photos.");
-      return;
-    }
-    setUploading(true);
-    setError(null);
-
-    for (const file of Array.from(files)) {
-      const form = new FormData();
-      form.append("file", file);
-      try {
-        const res = await fetch(`/api/edit/upload?slug=${encodeURIComponent(slug)}`, {
-          method: "POST",
-          body: form,
-        });
-        const data = await res.json();
-        if (!res.ok) throw new Error(data.error ?? "Upload failed.");
-        const photo: Photo = { url: data.url, width: data.width, height: data.height };
-        setFields((f) => ({ ...f, photos: [...f.photos!, photo] }));
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Upload failed.");
+  const onUpload = useCallback(
+    async (files: FileList | File[]) => {
+      const list = Array.from(files);
+      if (list.length === 0) return;
+      if (!SLUG_RE.test(slug)) {
+        setError("Set a valid slug before uploading photos.");
+        return;
       }
-    }
-    setUploading(false);
-  }
+      setUploading(true);
+      setError(null);
 
-  async function removePhoto(i: number) {
-    const photo = fields.photos![i];
-    set("photos", fields.photos!.filter((_, idx) => idx !== i));
-    // Best-effort — don't block the UI on cleanup succeeding.
-    fetch("/api/edit/upload", {
-      method: "DELETE",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ url: photo.url }),
-    }).catch(() => {});
-  }
+      for (const file of list) {
+        const form = new FormData();
+        form.append("file", file);
+        try {
+          const res = await fetch(`/api/edit/upload?slug=${encodeURIComponent(slug)}`, {
+            method: "POST",
+            body: form,
+          });
+          const data = await res.json();
+          if (!res.ok) throw new Error(data.error ?? "Upload failed.");
+          const photo: Photo = { url: data.url, width: data.width, height: data.height };
+          setFields((f) => ({ ...f, photos: [...(f.photos ?? []), photo] }));
+        } catch (err) {
+          setError(
+            err instanceof Error
+              ? `${file.name}: ${err.message}`
+              : `${file.name}: upload failed.`
+          );
+        }
+      }
+      setUploading(false);
+    },
+    [slug]
+  );
 
-  /** Move a photo one slot left/right. Position 0 is the cover image. */
-  function movePhoto(i: number, dir: -1 | 1) {
-    const next = [...fields.photos!];
-    const j = i + dir;
-    if (j < 0 || j >= next.length) return;
-    [next[i], next[j]] = [next[j], next[i]];
-    set("photos", next);
-  }
-
-  function setCaption(i: number, caption: string) {
-    set(
-      "photos",
-      fields.photos!.map((p, idx) =>
-        idx === i ? { ...p, caption: caption || undefined } : p
-      )
+  /** Removals are best-effort on the storage side — never block on cleanup. */
+  function onPhotosChange(next: Photo[]) {
+    const removed = (fields.photos ?? []).filter(
+      (p) => !next.some((n) => n.url === p.url)
     );
+    set("photos", next);
+    for (const photo of removed) {
+      fetch("/api/edit/upload", {
+        method: "DELETE",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ url: photo.url }),
+      }).catch(() => {});
+    }
   }
 
-  // ---- save / delete ----
-  async function onSubmit(e: React.FormEvent) {
-    e.preventDefault();
+  // ---- save ----
+  const save = useCallback(async () => {
     setError(null);
 
     if (mode === "create" && !SLUG_RE.test(slug)) {
@@ -244,11 +241,7 @@ export default function ReviewForm({
     }
 
     setSaving(true);
-    const tags = tagsText
-      .split(",")
-      .map((t) => t.trim())
-      .filter(Boolean);
-    const payload = { ...fields, tags, slug };
+    const payload = { ...fields, slug };
 
     const res =
       mode === "create"
@@ -264,6 +257,9 @@ export default function ReviewForm({
           });
 
     if (res.ok) {
+      // Clear the guard before navigating, or leaving prompts about
+      // changes that were in fact just saved.
+      setBaseline(JSON.stringify({ slug, fields }));
       router.push("/edit");
       router.refresh();
       return;
@@ -271,12 +267,61 @@ export default function ReviewForm({
     const data = await res.json().catch(() => ({}));
     setError(data.error ?? "Failed to save.");
     setSaving(false);
+  }, [fields, slug, mode, initial, router]);
+
+  // ⌘S / Ctrl+S saves, the way every other editor does.
+  useEffect(() => {
+    function onKey(e: KeyboardEvent) {
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "s") {
+        e.preventDefault();
+        if (!saving && !uploading) void save();
+      }
+    }
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [save, saving, uploading]);
+
+  // Closing the tab mid-edit shouldn't silently bin the write-up.
+  useEffect(() => {
+    if (!dirty) return;
+    function onBeforeUnload(e: BeforeUnloadEvent) {
+      e.preventDefault();
+      e.returnValue = "";
+    }
+    window.addEventListener("beforeunload", onBeforeUnload);
+    return () => window.removeEventListener("beforeunload", onBeforeUnload);
+  }, [dirty]);
+
+  function onCancel() {
+    if (dirty && !window.confirm("Discard unsaved changes?")) return;
+    router.push("/edit");
   }
 
+  const visitCount = fields.visitCount ?? (fields.revisited ? 2 : 1);
+
   return (
-    <form onSubmit={onSubmit} className="space-y-10 pb-24">
+    <form
+      onSubmit={(e) => {
+        e.preventDefault();
+        void save();
+      }}
+      className="space-y-12 pb-28"
+    >
+      {/* ---- Section jump bar ---- */}
+      <nav className="sticky top-0 z-20 -mx-6 flex flex-wrap gap-1 border-b border-line bg-ink/85 px-6 py-3 backdrop-blur-sm">
+        {SECTIONS.map((s) => (
+          <a
+            key={s.id}
+            href={`#${s.id}`}
+            className="rounded-full px-3 py-1.5 text-xs text-muted transition-colors hover:bg-surface-2 hover:text-cream"
+          >
+            {s.label}
+          </a>
+        ))}
+      </nav>
+
       {/* ---- Identity ---- */}
-      <section className="space-y-4">
+      <section id="identity" className="scroll-mt-20 space-y-4">
         <p className="eyebrow">Identity</p>
 
         <div className="grid gap-4 sm:grid-cols-2">
@@ -305,15 +350,24 @@ export default function ReviewForm({
               placeholder="some-restaurant"
               required
             />
+            {mode === "create" && slug && (
+              <p className={hintCls}>Will live at /reviews/{slug}</p>
+            )}
           </div>
 
           <div className="space-y-1.5">
             <label className={labelCls}>City</label>
             <input
               className={inputCls}
+              list="city-suggestions"
               value={fields.city}
               onChange={(e) => set("city", e.target.value)}
             />
+            <datalist id="city-suggestions">
+              {citySuggestions.map((c) => (
+                <option key={c} value={c} />
+              ))}
+            </datalist>
           </div>
           <div className="space-y-1.5">
             <label className={labelCls}>Country</label>
@@ -387,7 +441,10 @@ export default function ReviewForm({
                   </span>
                   <button
                     type="button"
-                    onClick={clearLocation}
+                    onClick={() => {
+                      set("lat", undefined);
+                      set("lng", undefined);
+                    }}
                     className="text-xs text-muted hover:text-[#e0554f]"
                   >
                     Remove pin
@@ -397,39 +454,165 @@ export default function ReviewForm({
             )}
           </div>
 
-          <div className="space-y-1.5">
+          {/* ---- Cuisine, with the family it will be filed under ---- */}
+          <div className="space-y-1.5 sm:col-span-2">
             <label className={labelCls}>Cuisine</label>
             <input
               className={inputCls}
+              list="cuisine-suggestions"
               value={fields.cuisine}
               onChange={(e) => set("cuisine", e.target.value)}
+              placeholder="e.g. French tasting menu"
             />
-          </div>
-          <div className="space-y-1.5">
-            <label className={labelCls}>Price (£ – ££££, optional)</label>
-            <input
-              className={inputCls}
-              value={fields.price ?? ""}
-              onChange={(e) => set("price", e.target.value || null)}
-            />
+            <datalist id="cuisine-suggestions">
+              {Array.from(new Set([...cuisineSuggestions, ...FAMILY_NAMES])).map(
+                (c) => (
+                  <option key={c} value={c} />
+                )
+              )}
+            </datalist>
+
+            {fields.cuisine.trim() && (
+              <div className="flex flex-wrap items-center gap-2 pt-1">
+                <span className={hintCls}>Filed under</span>
+                <span className="rounded-full border border-ember/30 bg-ember/10 px-2.5 py-1 text-xs text-ember">
+                  {cuisine.family}
+                </span>
+                {cuisine.style && (
+                  <span className="rounded-full border border-line px-2.5 py-1 text-xs text-muted">
+                    {cuisine.style}
+                  </span>
+                )}
+                {fields.cuisineFamily ? (
+                  <button
+                    type="button"
+                    onClick={() => set("cuisineFamily", undefined)}
+                    className="text-xs text-muted underline decoration-line underline-offset-4 hover:text-cream"
+                  >
+                    Use the automatic family
+                  </button>
+                ) : (
+                  cuisine.family === UNSPECIFIED && (
+                    <span className={hintCls}>
+                      Not recognised — set the family below.
+                    </span>
+                  )
+                )}
+              </div>
+            )}
+
+            <details className="pt-1">
+              <summary className="cursor-pointer text-xs text-muted hover:text-cream">
+                Override the family
+              </summary>
+              <div className="mt-2 space-y-1.5">
+                <input
+                  className={inputCls}
+                  list="family-suggestions"
+                  value={fields.cuisineFamily ?? ""}
+                  onChange={(e) => set("cuisineFamily", e.target.value || undefined)}
+                  placeholder="Leave blank to file it automatically"
+                />
+                <datalist id="family-suggestions">
+                  {FAMILY_NAMES.map((f) => (
+                    <option key={f} value={f} />
+                  ))}
+                </datalist>
+                <p className={hintCls}>
+                  &ldquo;French tasting menu&rdquo; and &ldquo;Modern
+                  French&rdquo; already file themselves under French. Only
+                  set this where the guess is wrong.
+                </p>
+              </div>
+            </details>
           </div>
 
+          {/* ---- Price ---- */}
           <div className="space-y-1.5 sm:col-span-2">
-            <label className={labelCls}>
-              Visited (ISO date/time, e.g. 2026-09-01T19:30:00+01:00 — optional)
-            </label>
-            <input
-              className={inputCls}
-              value={fields.visitedAt ?? ""}
-              onChange={(e) => set("visitedAt", e.target.value || null)}
-              placeholder="2026-09-01 or 2026-09-01T19:30:00+01:00"
-            />
+            <label className={labelCls}>Price</label>
+            <div className="flex flex-wrap gap-2">
+              {PRICES.map((p) => {
+                const active = fields.price === p;
+                return (
+                  <button
+                    key={p}
+                    type="button"
+                    aria-pressed={active}
+                    onClick={() => set("price", active ? null : p)}
+                    className={`rounded-full border px-4 py-2 text-sm transition-colors ${
+                      active
+                        ? "border-cream/40 bg-surface-2 text-cream"
+                        : "border-line text-muted hover:text-cream"
+                    }`}
+                  >
+                    {p}
+                  </button>
+                );
+              })}
+              {fields.price && !PRICES.includes(fields.price) && (
+                <span className="rounded-full border border-line px-4 py-2 text-sm text-muted">
+                  {fields.price}
+                </span>
+              )}
+              {fields.price && (
+                <button
+                  type="button"
+                  onClick={() => set("price", null)}
+                  className="rounded-full px-3 py-2 text-xs text-muted underline decoration-line underline-offset-4 hover:text-cream"
+                >
+                  Clear
+                </button>
+              )}
+            </div>
           </div>
         </div>
       </section>
 
+      {/* ---- Visits ---- */}
+      <section id="visits" className="scroll-mt-20 space-y-5">
+        <p className="eyebrow">Visits</p>
+
+        <DateField
+          label="First visited"
+          value={fields.visitedAt}
+          approx={fields.dateApprox}
+          onChange={(v) => set("visitedAt", v)}
+          onApproxChange={(v) => set("dateApprox", v || undefined)}
+        />
+
+        <VisitCounter
+          count={visitCount}
+          onChange={(n) => {
+            setFields((f) => ({
+              ...f,
+              visitCount: n > 1 ? n : undefined,
+              revisited: n > 1 ? true : undefined,
+              lastVisitedAt: n > 1 ? f.lastVisitedAt : undefined,
+            }));
+          }}
+        />
+
+        {visitCount > 1 && (
+          <DateField
+            label="Last back"
+            value={fields.lastVisitedAt ?? null}
+            onChange={(v) => set("lastVisitedAt", v)}
+          />
+        )}
+
+        <label className="flex items-center gap-2 pt-1 text-sm text-muted">
+          <input
+            type="checkbox"
+            className="accent-[var(--color-ember)]"
+            checked={fields.closed ?? false}
+            onChange={(e) => set("closed", e.target.checked || undefined)}
+          />
+          Permanently closed
+        </label>
+      </section>
+
       {/* ---- Verdict ---- */}
-      <section className="space-y-4">
+      <section id="verdict" className="scroll-mt-20 space-y-5">
         <p className="eyebrow">Verdict</p>
 
         <div className="space-y-1.5">
@@ -440,6 +623,8 @@ export default function ReviewForm({
                 key={t}
                 type="button"
                 onClick={() => set("tier", t)}
+                title={TIERS[t].blurb}
+                aria-pressed={fields.tier === t}
                 className={`flex items-center gap-2 rounded-full border px-3.5 py-2 text-sm transition-colors ${
                   fields.tier === t
                     ? "border-cream/40 bg-surface-2"
@@ -451,7 +636,13 @@ export default function ReviewForm({
               </button>
             ))}
           </div>
+          <p className={hintCls}>{TIERS[fields.tier as Tier].blurb}</p>
         </div>
+
+        <BadgePicker
+          selected={fields.badges ?? []}
+          onChange={(b: BadgeKey[]) => set("badges", b)}
+        />
 
         <div className="space-y-1.5">
           <label className={labelCls}>Card summary (verdict)</label>
@@ -459,7 +650,12 @@ export default function ReviewForm({
             className={inputCls}
             value={fields.verdict}
             onChange={(e) => set("verdict", e.target.value)}
+            maxLength={160}
           />
+          <p className={hintCls}>
+            {fields.verdict.length}/160 — this is the line that shows on
+            every card and in search results.
+          </p>
         </div>
 
         <div className="space-y-1.5">
@@ -471,25 +667,6 @@ export default function ReviewForm({
           />
         </div>
 
-        <div className="flex flex-wrap gap-6 pt-1">
-          <label className="flex items-center gap-2 text-sm text-muted">
-            <input
-              type="checkbox"
-              checked={fields.revisited ?? false}
-              onChange={(e) => set("revisited", e.target.checked || undefined)}
-            />
-            Been back
-          </label>
-          <label className="flex items-center gap-2 text-sm text-muted">
-            <input
-              type="checkbox"
-              checked={fields.closed ?? false}
-              onChange={(e) => set("closed", e.target.checked || undefined)}
-            />
-            Permanently closed
-          </label>
-        </div>
-
         <div className="space-y-1.5">
           <label className={labelCls}>Needs filling in (optional)</label>
           <textarea
@@ -499,15 +676,24 @@ export default function ReviewForm({
             placeholder="An open question about this entry, shown as a callout on the review page."
           />
         </div>
+
+        <div className="space-y-1.5">
+          <label className={labelCls}>Tags</label>
+          <TagInput
+            tags={fields.tags}
+            suggestions={tagSuggestions}
+            onChange={(t) => set("tags", t)}
+          />
+        </div>
       </section>
 
       {/* ---- Body ---- */}
-      <section className="space-y-4">
+      <section id="writeup" className="scroll-mt-20 space-y-4">
         <div className="flex items-center justify-between">
           <p className="eyebrow">Write-up (one paragraph per box)</p>
           <button
             type="button"
-            onClick={addParagraph}
+            onClick={() => set("body", [...fields.body, ""])}
             className="text-sm text-cream underline decoration-line underline-offset-4 hover:decoration-ember"
           >
             + Add paragraph
@@ -519,15 +705,53 @@ export default function ReviewForm({
               <textarea
                 className={`${inputCls} min-h-20 flex-1`}
                 value={p}
-                onChange={(e) => updateParagraph(i, e.target.value)}
+                onChange={(e) =>
+                  set(
+                    "body",
+                    fields.body.map((x, idx) => (idx === i ? e.target.value : x))
+                  )
+                }
               />
-              <button
-                type="button"
-                onClick={() => removeParagraph(i)}
-                className="shrink-0 self-start text-sm text-muted hover:text-[#e0554f]"
-              >
-                Remove
-              </button>
+              <div className="flex shrink-0 flex-col gap-1 pt-1">
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (i === 0) return;
+                    const next = [...fields.body];
+                    [next[i - 1], next[i]] = [next[i], next[i - 1]];
+                    set("body", next);
+                  }}
+                  disabled={i === 0}
+                  aria-label="Move paragraph up"
+                  className="text-xs text-muted hover:text-cream disabled:opacity-30"
+                >
+                  ↑
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (i === fields.body.length - 1) return;
+                    const next = [...fields.body];
+                    [next[i + 1], next[i]] = [next[i], next[i + 1]];
+                    set("body", next);
+                  }}
+                  disabled={i === fields.body.length - 1}
+                  aria-label="Move paragraph down"
+                  className="text-xs text-muted hover:text-cream disabled:opacity-30"
+                >
+                  ↓
+                </button>
+                <button
+                  type="button"
+                  onClick={() =>
+                    set("body", fields.body.filter((_, idx) => idx !== i))
+                  }
+                  aria-label="Remove paragraph"
+                  className="text-xs text-muted hover:text-[#e0554f]"
+                >
+                  ×
+                </button>
+              </div>
             </div>
           ))}
           {fields.body.length === 0 && (
@@ -537,12 +761,12 @@ export default function ReviewForm({
       </section>
 
       {/* ---- Dishes ---- */}
-      <section className="space-y-4">
+      <section id="dishes" className="scroll-mt-20 space-y-4">
         <div className="flex items-center justify-between">
           <p className="eyebrow">Dishes worth noting (optional)</p>
           <button
             type="button"
-            onClick={addDish}
+            onClick={() => set("dishes", [...fields.dishes, { name: "", note: "" }])}
             className="text-sm text-cream underline decoration-line underline-offset-4 hover:decoration-ember"
           >
             + Add dish
@@ -567,7 +791,9 @@ export default function ReviewForm({
               </div>
               <button
                 type="button"
-                onClick={() => removeDish(i)}
+                onClick={() =>
+                  set("dishes", fields.dishes.filter((_, idx) => idx !== i))
+                }
                 className="shrink-0 self-start text-sm text-muted hover:text-[#e0554f]"
               >
                 Remove
@@ -582,128 +808,41 @@ export default function ReviewForm({
         </div>
       </section>
 
-      {/* ---- Tags ---- */}
-      <section className="space-y-1.5">
-        <label className={labelCls}>Tags (comma-separated)</label>
-        <input
-          className={inputCls}
-          value={tagsText}
-          onChange={(e) => setTagsText(e.target.value)}
-          placeholder="dinner, trip: Paris 2026, would revisit"
+      {/* ---- Photos ---- */}
+      <section id="photos" className="scroll-mt-20 space-y-4">
+        <p className="eyebrow">Photos</p>
+        <PhotoManager
+          photos={fields.photos ?? []}
+          onChange={onPhotosChange}
+          onUpload={onUpload}
+          uploading={uploading}
+          disabled={!canUpload}
+          disabledHint="Set a slug above before uploading photos — it decides where they're stored."
         />
       </section>
 
-      {/* ---- Photos ---- */}
-      <section className="space-y-4">
-        <p className="eyebrow">Photos</p>
-
-        {mode === "create" && !SLUG_RE.test(slug) && (
-          <p className="text-sm text-muted">
-            Set a slug above before uploading photos.
-          </p>
-        )}
-
-        {fields.photos!.length > 0 && (
-          <p className="text-xs text-muted">
-            The first photo is the cover. Use ← → to reorder; captions are
-            optional and double as the image&rsquo;s alt text.
-          </p>
-        )}
-
-        <div className="grid gap-4 sm:grid-cols-2">
-          {fields.photos!.map((p, i) => (
-            <div
-              key={p.url}
-              className="space-y-2 rounded-lg border border-line p-2"
-            >
-              <div className="group relative aspect-[4/3] overflow-hidden rounded-md">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={p.url}
-                  alt={p.caption || ""}
-                  className="h-full w-full object-cover"
-                />
-
-                <button
-                  type="button"
-                  onClick={() => removePhoto(i)}
-                  className="absolute right-1.5 top-1.5 rounded-full bg-ink/85 px-2.5 py-1 text-xs text-cream opacity-0 transition-opacity group-hover:opacity-100"
-                >
-                  Remove
-                </button>
-
-                {i === 0 && (
-                  <span className="absolute left-1.5 top-1.5 rounded-full bg-ink/85 px-2 py-0.5 text-[0.6rem] uppercase tracking-wider text-ember">
-                    Cover
-                  </span>
-                )}
-
-                <div className="absolute bottom-1.5 left-1.5 flex gap-1">
-                  <button
-                    type="button"
-                    onClick={() => movePhoto(i, -1)}
-                    disabled={i === 0}
-                    aria-label="Move photo earlier"
-                    className="rounded-full bg-ink/85 px-2 py-1 text-xs text-cream disabled:opacity-30"
-                  >
-                    ←
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => movePhoto(i, 1)}
-                    disabled={i === fields.photos!.length - 1}
-                    aria-label="Move photo later"
-                    className="rounded-full bg-ink/85 px-2 py-1 text-xs text-cream disabled:opacity-30"
-                  >
-                    →
-                  </button>
-                </div>
-              </div>
-
-              <input
-                className={inputCls}
-                value={p.caption ?? ""}
-                onChange={(e) => setCaption(i, e.target.value)}
-                placeholder="Caption (optional)"
-              />
-            </div>
-          ))}
-
-          <label
-            className={`flex aspect-[4/3] cursor-pointer flex-col items-center justify-center gap-1 rounded-lg border border-dashed border-line text-center text-xs text-muted transition-colors hover:border-ember/40 hover:text-cream ${
-              !SLUG_RE.test(slug) ? "pointer-events-none opacity-40" : ""
-            }`}
-          >
-            {uploading ? (
-              <span className="flex items-center gap-1.5">
-                <Spinner />
-                Uploading…
-              </span>
-            ) : (
-              "+ Add photos"
-            )}
-            <input
-              type="file"
-              accept="image/*,.heic,.heif"
-              multiple
-              className="hidden"
-              onChange={(e) => onFilesSelected(e.target.files)}
-              disabled={uploading}
-            />
-          </label>
-        </div>
-      </section>
-
       {error && (
-        <p className="rounded-lg border border-[#e0554f]/30 bg-[#e0554f]/10 px-4 py-3 text-sm text-[#e0554f]">
+        <p
+          role="alert"
+          className="rounded-lg border border-[#e0554f]/30 bg-[#e0554f]/10 px-4 py-3 text-sm text-[#e0554f]"
+        >
           {error}
         </p>
       )}
 
-      <div className="sticky bottom-0 -mx-6 flex items-center justify-end gap-3 border-t border-line bg-ink/90 px-6 py-4 backdrop-blur-sm">
+      <div className="sticky bottom-0 -mx-6 flex flex-wrap items-center justify-end gap-3 border-t border-line bg-ink/90 px-6 py-4 backdrop-blur-sm">
+        <span className="mr-auto text-xs text-muted">
+          {saving
+            ? "Saving…"
+            : dirty
+              ? "Unsaved changes · ⌘S to save"
+              : mode === "edit"
+                ? "All changes saved"
+                : "Nothing to save yet"}
+        </span>
         <button
           type="button"
-          onClick={() => router.push("/edit")}
+          onClick={onCancel}
           className="rounded-full border border-line px-5 py-2.5 text-sm text-muted hover:text-cream"
         >
           Cancel

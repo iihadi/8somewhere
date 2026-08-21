@@ -1,4 +1,5 @@
 import type { Tier } from "@/lib/tiers";
+import type { BadgeKey } from "@/lib/badges";
 
 export type Dish = {
   name: string;
@@ -26,6 +27,12 @@ export type Review = {
   lng?: number;
   cuisine: string;
   /**
+   * Overrides the family that `cuisine` would otherwise be filed
+   * under. Only needed where the guess in lib/cuisine.ts gets it
+   * wrong — "French tasting menu" already files itself under French.
+   */
+  cuisineFamily?: string;
+  /**
    * ISO timestamp from the calendar booking, or a plain YYYY-MM-DD from
    * the ledger. null when the visit was never dated anywhere.
    */
@@ -48,8 +55,24 @@ export type Review = {
   photos?: Photo[];
   /** Permanently closed */
   closed?: boolean;
-  /** Been back at least once */
+  /**
+   * Been back at least once. Kept as the source of truth for older
+   * entries written before visits were counted; `visitCount` in
+   * lib/derive.ts reads through it.
+   */
   revisited?: boolean;
+  /**
+   * Total number of times I've eaten here, `visitedAt` included. 1 or
+   * undefined means a single visit; 3 means two returns.
+   */
+  visitCount?: number;
+  /** The most recent return, when it was worth dating separately. */
+  lastVisitedAt?: string | null;
+  /**
+   * Shorthand verdicts that the star rating can't express — "Must
+   * visit", "One and done". Shown alongside the stars, never instead.
+   */
+  badges?: BadgeKey[];
   /** Open question flagged in the ledger — needs confirming */
   needsCheck?: string;
 };

@@ -7,8 +7,13 @@ import {
   groupByCity,
   groupByCuisine,
   visitsByYear,
+  getBadgeCounts,
+  badgesPresent,
+  returnCount,
 } from "@/lib/derive";
 import { TIERS, TIER_ORDER } from "@/lib/tiers";
+import { BADGES } from "@/lib/badges";
+import Link from "next/link";
 import Reveal from "@/components/Reveal";
 import Stars from "@/components/Stars";
 import BarRow from "@/components/BarRow";
@@ -37,6 +42,16 @@ export default async function StatsPage() {
 
   const undated = reviews.filter((r) => !r.visitedAt).length;
 
+  const badgeKeys = badgesPresent(reviews);
+  const badgeCounts = getBadgeCounts(reviews);
+  const maxBadge = Math.max(1, ...badgeKeys.map((b) => badgeCounts[b]));
+
+  /** Places I've been back to, most returns first. */
+  const repeats = [...reviews]
+    .filter((r) => returnCount(r) > 0)
+    .sort((a, b) => returnCount(b) - returnCount(a) || a.name.localeCompare(b.name));
+  const maxRepeat = Math.max(1, ...repeats.map(returnCount));
+
   return (
     <div className="mx-auto max-w-4xl px-6 pt-20">
       <Reveal className="mb-12">
@@ -50,12 +65,13 @@ export default async function StatsPage() {
 
       {/* ---- Headline numbers ---- */}
       <Reveal>
-        <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-line bg-line sm:grid-cols-4">
+        <dl className="grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-line bg-line sm:grid-cols-3 lg:grid-cols-5">
           {[
             { k: "Restaurants", v: stats.total },
             { k: "Cuisines", v: cuisines.length },
             { k: "Cities", v: stats.cities },
             { k: "Countries", v: stats.countries },
+            { k: "Meals eaten", v: stats.totalVisits },
           ].map((s) => (
             <div key={s.k} className="bg-surface px-5 py-6">
               <dd className="font-display text-3xl">{s.v}</dd>
@@ -139,6 +155,72 @@ export default async function StatsPage() {
         </section>
       </Reveal>
 
+      {/* ---- Badges & returns ---- */}
+      <div className="mt-14 grid gap-12 sm:grid-cols-2">
+        <Reveal>
+          <section>
+            <h2 className="mb-1 font-display text-2xl">Badges</h2>
+            <p className="mb-4 text-sm text-muted">
+              What the stars don&rsquo;t say — whether I&rsquo;d go back.
+            </p>
+            <div className="rounded-2xl border border-line bg-surface p-4">
+              {badgeKeys.length > 0 ? (
+                badgeKeys.map((b) => (
+                  <BarRow
+                    key={b}
+                    label={<span className="text-muted">{BADGES[b].label}</span>}
+                    count={badgeCounts[b]}
+                    max={maxBadge}
+                    accent={BADGES[b].accent}
+                  />
+                ))
+              ) : (
+                <p className="px-1 py-2 text-sm text-muted">
+                  No badges given out yet.
+                </p>
+              )}
+            </div>
+          </section>
+        </Reveal>
+
+        <Reveal delay={0.05}>
+          <section>
+            <h2 className="mb-1 font-display text-2xl">Been back</h2>
+            <p className="mb-4 text-sm text-muted">
+              {stats.repeats > 0
+                ? `${stats.repeats} of ${stats.total} places have earned a return.`
+                : "Nowhere has earned a second visit yet."}
+            </p>
+            <div className="rounded-2xl border border-line bg-surface p-4">
+              {repeats.length > 0 ? (
+                repeats.slice(0, 10).map((r) => (
+                  <BarRow
+                    key={r.slug}
+                    label={r.name}
+                    count={returnCount(r)}
+                    max={maxRepeat}
+                    accent="var(--color-ember)"
+                    href={`/reviews/${r.slug}`}
+                  />
+                ))
+              ) : (
+                <p className="px-1 py-2 text-sm text-muted">
+                  Nothing revisited yet.
+                </p>
+              )}
+              {repeats.length > 10 && (
+                <p className="px-1 pt-3 text-xs text-muted">
+                  + {repeats.length - 10} more —{" "}
+                  <Link href="/reviews" className="underline underline-offset-4">
+                    sort the archive by most visited
+                  </Link>
+                </p>
+              )}
+            </div>
+          </section>
+        </Reveal>
+      </div>
+
       <div className="mt-14 grid gap-12 sm:grid-cols-2">
         {/* ---- Cuisines ---- */}
         <Reveal>
@@ -151,7 +233,7 @@ export default async function StatsPage() {
                   label={c.name}
                   count={c.reviews.length}
                   max={maxCuisine}
-                  href="/cuisines"
+                  href={`/cuisines#${encodeURIComponent(c.name)}`}
                 />
               ))}
               {cuisines.length > 12 && (

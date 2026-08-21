@@ -70,26 +70,51 @@ export default function Hero({
           A running record of everywhere I&rsquo;ve eaten
         </motion.p>
 
-        <h1 className="mt-6 font-display text-6xl leading-[0.95] tracking-tight sm:text-8xl">
-          {["8", "somewhere"].map((word, i) => (
-            <span key={word} className="block overflow-hidden">
-              <motion.span
-                custom={i}
-                variants={line}
-                initial="hidden"
-                animate="show"
-                className="block"
-              >
-                {i === 0 ? (
-                  <span className="bg-gradient-to-r from-ember to-gold bg-clip-text text-transparent">
-                    {word}
-                  </span>
-                ) : (
-                  <span className="italic">{word}</span>
-                )}
-              </motion.span>
-            </span>
-          ))}
+        {/*
+          The mark replaces the "8" outright rather than sitting beside
+          it — it *is* the 8. It's painted as a mask over the ember→gold
+          gradient the "8" used to carry, so the drawing picks up the
+          brand colour instead of staying flat cream. The accessible
+          name lives on the <h1>; the drawing itself is decorative.
+        */}
+        <h1
+          aria-label="8somewhere"
+          className="mt-6 font-display text-6xl leading-[0.95] tracking-tight sm:text-8xl"
+        >
+          <span aria-hidden className="block overflow-hidden">
+            <motion.span
+              custom={0}
+              variants={line}
+              initial="hidden"
+              animate="show"
+              className="block"
+            >
+              <span
+                className="-ml-[0.06em] block h-[1.55em] w-[1.6em] bg-gradient-to-br from-ember to-gold drop-shadow-[0_0_38px_rgba(255,138,61,0.28)]"
+                style={{
+                  WebkitMaskImage: "url(/logo-mark.png)",
+                  maskImage: "url(/logo-mark.png)",
+                  WebkitMaskSize: "contain",
+                  maskSize: "contain",
+                  WebkitMaskRepeat: "no-repeat",
+                  maskRepeat: "no-repeat",
+                  WebkitMaskPosition: "left bottom",
+                  maskPosition: "left bottom",
+                }}
+              />
+            </motion.span>
+          </span>
+          <span aria-hidden className="block overflow-hidden">
+            <motion.span
+              custom={1}
+              variants={line}
+              initial="hidden"
+              animate="show"
+              className="-mt-[0.24em] block italic"
+            >
+              somewhere
+            </motion.span>
+          </span>
         </h1>
 
         <motion.p

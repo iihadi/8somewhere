@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getAllReviews } from "@/lib/repo";
-import { sortByDate } from "@/lib/derive";
+import { sortByDate, visitCount } from "@/lib/derive";
+import { parseCuisine } from "@/lib/cuisine";
 
 export const dynamic = "force-dynamic";
 
@@ -20,14 +21,18 @@ const COLUMNS = [
   "lat",
   "lng",
   "cuisine",
+  "cuisineFamily",
   "visitedAt",
+  "dateApprox",
   "price",
   "tier",
   "verdict",
   "quote",
   "tags",
   "closed",
-  "revisited",
+  "visitCount",
+  "lastVisitedAt",
+  "badges",
   "needsCheck",
   "photoCount",
   "body",
@@ -43,6 +48,12 @@ export async function GET(req: Request) {
     const rows = reviews.map((r) =>
       COLUMNS.map((c) => {
         if (c === "photoCount") return csvCell(r.photos?.length ?? 0);
+        // The resolved family, not the raw override — the export is
+        // meant to be read, and a blank column reads as "no cuisine".
+        if (c === "cuisineFamily") {
+          return csvCell(parseCuisine(r.cuisine, r.cuisineFamily).family);
+        }
+        if (c === "visitCount") return csvCell(visitCount(r));
         if (c === "body") return csvCell((r.body ?? []).join("\n\n"));
         return csvCell(r[c as keyof typeof r]);
       }).join(",")

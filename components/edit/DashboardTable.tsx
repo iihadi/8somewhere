@@ -6,11 +6,19 @@ import { motion } from "framer-motion";
 import type { Review } from "@/data/seed-reviews";
 import { TIERS, TIER_ORDER, type Tier } from "@/lib/tiers";
 import { formatShortDate } from "@/lib/format";
+import { returnCount } from "@/lib/derive";
 import Stars from "@/components/Stars";
+import Badges from "@/components/Badges";
 import DeleteReviewButton from "./DeleteReviewButton";
 
-type Sort = "recent" | "oldest" | "rating" | "name" | "attention";
-type Flag = "all" | "attention" | "no-photos" | "no-location" | "closed";
+type Sort = "recent" | "oldest" | "rating" | "name" | "attention" | "visits";
+type Flag =
+  | "all"
+  | "attention"
+  | "no-photos"
+  | "no-location"
+  | "closed"
+  | "no-badge";
 
 function sortKey(r: Review) {
   return r.visitedAt ? +new Date(r.visitedAt) : -Infinity;
@@ -38,6 +46,7 @@ export default function DashboardTable({ reviews }: { reviews: Review[] }) {
       attention: reviews.filter(needsAttention).length,
       noPhotos: reviews.filter((r) => !r.photos || r.photos.length === 0).length,
       noLocation: reviews.filter((r) => r.lat == null || r.lng == null).length,
+      noBadge: reviews.filter((r) => (r.badges?.length ?? 0) === 0).length,
     }),
     [reviews]
   );
@@ -52,6 +61,7 @@ export default function DashboardTable({ reviews }: { reviews: Review[] }) {
       if (flag === "no-photos" && r.photos && r.photos.length > 0) return false;
       if (flag === "no-location" && r.lat != null && r.lng != null) return false;
       if (flag === "closed" && !r.closed) return false;
+      if (flag === "no-badge" && (r.badges?.length ?? 0) > 0) return false;
       if (!q) return true;
       return (
         r.name.toLowerCase().includes(q) ||
@@ -69,6 +79,8 @@ export default function DashboardTable({ reviews }: { reviews: Review[] }) {
       if (sort === "rating") return TIERS[a.tier].order - TIERS[b.tier].order;
       if (sort === "name") return a.name.localeCompare(b.name);
       if (sort === "oldest") return sortKey(a) - sortKey(b);
+      if (sort === "visits")
+        return returnCount(b) - returnCount(a) || sortKey(b) - sortKey(a);
       return sortKey(b) - sortKey(a);
     });
   }, [reviews, city, tier, flag, query, sort]);
@@ -76,12 +88,13 @@ export default function DashboardTable({ reviews }: { reviews: Review[] }) {
   return (
     <div className="space-y-6">
       {/* ---- Quick stats ---- */}
-      <div className="grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-line bg-line sm:grid-cols-4">
+      <div className="grid grid-cols-2 gap-px overflow-hidden rounded-2xl border border-line bg-line sm:grid-cols-3 lg:grid-cols-5">
         {[
           { k: "Total", v: counts.total, f: "all" as Flag },
           { k: "Needs attention", v: counts.attention, f: "attention" as Flag },
           { k: "No photos", v: counts.noPhotos, f: "no-photos" as Flag },
           { k: "No pin on map", v: counts.noLocation, f: "no-location" as Flag },
+          { k: "No badge yet", v: counts.noBadge, f: "no-badge" as Flag },
         ].map((s) => (
           <button
             key={s.k}
@@ -172,6 +185,7 @@ export default function DashboardTable({ reviews }: { reviews: Review[] }) {
               <option value="rating">By rating</option>
               <option value="name">A–Z</option>
               <option value="attention">Needs attention first</option>
+              <option value="visits">Most visited</option>
             </select>
           </div>
         </div>
@@ -211,7 +225,18 @@ export default function DashboardTable({ reviews }: { reviews: Review[] }) {
               <p className="truncate text-xs text-muted">
                 {r.city} · {r.cuisine}
                 {r.visitedAt && ` · ${formatShortDate(r.visitedAt)}`}
+                {returnCount(r) > 0 && (
+                  <span className="text-ember">
+                    {" "}
+                    · {returnCount(r) + 1}&times;
+                  </span>
+                )}
               </p>
+              {(r.badges?.length ?? 0) > 0 && (
+                <p className="mt-1.5 flex flex-wrap gap-1.5">
+                  <Badges badges={r.badges} size="sm" limit={2} />
+                </p>
+              )}
             </div>
 
             <div className="hidden shrink-0 items-center gap-1.5 sm:flex">
