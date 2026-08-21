@@ -1,5 +1,5 @@
 import { getAllReviews } from "@/lib/repo";
-import { sortByDate } from "@/lib/derive";
+import { publishedOnly, sortByDate } from "@/lib/derive";
 import { TIERS } from "@/lib/tiers";
 
 const BASE = process.env.NEXT_PUBLIC_SITE_URL ?? "https://example.vercel.app";
@@ -16,7 +16,7 @@ function esc(s: string) {
 }
 
 export async function GET() {
-  const reviews = sortByDate(await getAllReviews()).slice(0, 50);
+  const reviews = sortByDate(publishedOnly(await getAllReviews())).slice(0, 50);
 
   const items = reviews
     .map((r) => {

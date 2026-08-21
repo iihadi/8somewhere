@@ -16,6 +16,10 @@ const links = [
   { href: "/about", label: "About" },
 ];
 
+// Doesn't get a nav-pill entry — it lives as an icon so the row of
+// text links doesn't get any longer, but "/" still jumps here from
+// anywhere via the global shortcut in SiteLayout.
+
 export default function Nav() {
   const pathname = usePathname();
   const { scrollY } = useScroll();
@@ -49,6 +53,23 @@ export default function Nav() {
         </Link>
 
         <ul className="flex flex-wrap items-center gap-1 text-sm">
+          <li>
+            <Link
+              href="/search"
+              aria-label="Search"
+              title="Search (press /)"
+              className={`relative grid h-9 w-9 place-items-center rounded-full transition-colors ${
+                pathname.startsWith("/search")
+                  ? "text-cream"
+                  : "text-muted hover:text-cream"
+              }`}
+            >
+              <svg viewBox="0 0 24 24" width="17" height="17" fill="none" aria-hidden>
+                <circle cx="11" cy="11" r="7" stroke="currentColor" strokeWidth="2" />
+                <path d="M20 20l-4-4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+              </svg>
+            </Link>
+          </li>
           {links.map((l) => {
             const active = pathname.startsWith(l.href);
             return (

@@ -75,6 +75,12 @@ export type Review = {
   badges?: BadgeKey[];
   /** Open question flagged in the ledger — needs confirming */
   needsCheck?: string;
+  /**
+   * Saved but not public yet. Drafts are invisible to every public
+   * page, the sitemap, and the RSS feed — they only ever show up in
+   * /edit, where they're still fully editable.
+   */
+  draft?: boolean;
 };
 
 /**
@@ -949,6 +955,8 @@ export const seedReviews: Review[] = [
 ];
 
 export type WishlistItem = {
+  /** Stable id — assigned once on creation, never derived from the name. */
+  id: string;
   name: string;
   city: string;
   note: string;
@@ -958,22 +966,26 @@ export type WishlistItem = {
 /** Booked or planned, not yet visited. */
 export const wishlist: WishlistItem[] = [
   {
+    id: "the-fat-duck",
     name: "The Fat Duck",
     city: "Bray",
     plannedFor: "2028-11-17",
     note: "The anchor trip. Dinner, wine pairing and an overnight stay because driving afterwards is not happening.",
   },
   {
+    id: "restaurant-journey",
     name: "Restaurant JOURNEY",
     city: "—",
     note: "Booked ahead. Not been yet.",
   },
   {
+    id: "plenitude",
     name: "Plénitude",
     city: "Paris",
     note: "Booked ahead. Not been yet.",
   },
   {
+    id: "core",
     name: "CORE",
     city: "London",
     note: "Booked ahead. Not been yet.",

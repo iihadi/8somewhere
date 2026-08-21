@@ -1,7 +1,12 @@
 import "server-only";
 import { cache } from "react";
-import type { Review } from "@/data/seed-reviews";
-import { readReviewsData, writeReviewsData } from "./storage";
+import type { Review, WishlistItem } from "@/data/seed-reviews";
+import {
+  readReviewsData,
+  writeReviewsData,
+  readWishlistData,
+  writeWishlistData,
+} from "./storage";
 
 /**
  * Wrapped in React's `cache` so the store is read once per render
@@ -57,4 +62,51 @@ export async function deleteReview(slug: string): Promise<void> {
   const next = all.filter((r) => r.slug !== slug);
   if (next.length === all.length) throw new Error(`No review with slug "${slug}".`);
   await writeReviewsData(next);
+}
+
+/**
+ * Applies one mutation to every review whose slug is in `slugs`, in a
+ * single read-modify-write — the dashboard's bulk actions call this
+ * instead of one `updateReview` per row, which would both be slower
+ * and re-read the whole blob once per row for no reason.
+ */
+export async function bulkUpdateReviews(
+  slugs: string[],
+  mutate: (review: Review) => Review
+): Promise<number> {
+  const wanted = new Set(slugs);
+  const all = await readFresh();
+  let touched = 0;
+  const next = all.map((r) => {
+    if (!wanted.has(r.slug)) return r;
+    touched += 1;
+    return mutate(r);
+  });
+  if (touched > 0) await writeReviewsData(next);
+  return touched;
+}
+
+/* ------------------------------------------------------------------ */
+/* Wishlist                                                             */
+/* ------------------------------------------------------------------ */
+
+export const getWishlist = cache(async (): Promise<WishlistItem[]> => {
+  return readWishlistData();
+});
+
+export async function createWishlistItem(
+  item: Omit<WishlistItem, "id">
+): Promise<WishlistItem> {
+  const all = await readWishlistData();
+  const id = `w-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`;
+  const created: WishlistItem = { ...item, id };
+  await writeWishlistData([created, ...all]);
+  return created;
+}
+
+export async function deleteWishlistItem(id: string): Promise<void> {
+  const all = await readWishlistData();
+  const next = all.filter((w) => w.id !== id);
+  if (next.length === all.length) throw new Error(`No wishlist item with id "${id}".`);
+  await writeWishlistData(next);
 }

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getAllReviews } from "@/lib/repo";
-import { groupByCuisine, stylesInGroup } from "@/lib/derive";
+import { groupByCuisine, publishedOnly, stylesInGroup } from "@/lib/derive";
 import { formatShortDate } from "@/lib/format";
 import Stars from "@/components/Stars";
 import Badges from "@/components/Badges";
@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function CuisinesPage() {
-  const reviews = await getAllReviews();
+  const reviews = publishedOnly(await getAllReviews());
   const groups = groupByCuisine(reviews);
 
   return (

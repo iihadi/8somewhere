@@ -58,6 +58,7 @@ export async function PUT(req: Request, { params }: Params) {
     lastVisitedAt:
       visits > 1 ? body.lastVisitedAt?.trim() || undefined : undefined,
     badges: sanitiseBadges(body.badges),
+    draft: body.draft ? true : undefined,
     needsCheck: body.needsCheck?.trim() || undefined,
   };
 

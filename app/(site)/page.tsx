@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { getAllReviews } from "@/lib/repo";
-import { getStats, onThisDay, sortByDate } from "@/lib/derive";
+import { getStats, onThisDay, publishedOnly, sortByDate } from "@/lib/derive";
 import ReviewCard from "@/components/ReviewCard";
 import Badges from "@/components/Badges";
 import Reveal from "@/components/Reveal";
@@ -18,7 +18,7 @@ function yearsAgo(iso: string) {
 }
 
 export default async function Home() {
-  const reviews = await getAllReviews();
+  const reviews = publishedOnly(await getAllReviews());
   const stats = getStats(reviews);
   const recent = sortByDate(reviews)
     .filter((r) => r.visitedAt)

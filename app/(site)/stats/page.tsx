@@ -10,6 +10,7 @@ import {
   getBadgeCounts,
   badgesPresent,
   returnCount,
+  publishedOnly,
 } from "@/lib/derive";
 import { TIERS, TIER_ORDER } from "@/lib/tiers";
 import { BADGES } from "@/lib/badges";
@@ -26,7 +27,7 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function StatsPage() {
-  const reviews = await getAllReviews();
+  const reviews = publishedOnly(await getAllReviews());
   const stats = getStats(reviews);
   const tierCounts = getTierCounts(reviews);
   const cuisines = groupByCuisine(reviews);

@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { getAllReviews } from "@/lib/repo";
-import { getCities, getStats, getTierCounts } from "@/lib/derive";
+import { getCities, getStats, getTierCounts, publishedOnly } from "@/lib/derive";
 import { TIERS, TIER_ORDER } from "@/lib/tiers";
 import Reveal from "@/components/Reveal";
 import TierBadge from "@/components/TierBadge";
@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 export const dynamic = "force-dynamic";
 
 export default async function AboutPage() {
-  const reviews = await getAllReviews();
+  const reviews = publishedOnly(await getAllReviews());
   const stats = getStats(reviews);
   const cities = getCities(reviews);
   const tierCounts = getTierCounts(reviews);

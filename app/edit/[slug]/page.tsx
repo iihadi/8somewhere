@@ -45,6 +45,7 @@ export default async function EditReviewPage({ params }: Params) {
           mode="edit"
           initial={review}
           cuisineSuggestions={getCuisines(reviews)}
+          existingReviews={reviews.map((r) => ({ slug: r.slug, name: r.name, city: r.city }))}
           citySuggestions={getCities(reviews)}
           tagSuggestions={getTags(reviews)}
         />

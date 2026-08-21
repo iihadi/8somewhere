@@ -3,7 +3,13 @@ import Link from "next/link";
 import Image from "next/image";
 import { notFound } from "next/navigation";
 import { getAllReviews, getReview } from "@/lib/repo";
-import { sortByDate, returnCount, revisitLabel } from "@/lib/derive";
+import {
+  sortByDate,
+  returnCount,
+  revisitLabel,
+  publishedOnly,
+  relatedReviews,
+} from "@/lib/derive";
 import { parseCuisine } from "@/lib/cuisine";
 import { TIERS } from "@/lib/tiers";
 import { placeholderGradient } from "@/lib/photos";
@@ -14,6 +20,7 @@ import { BADGES } from "@/lib/badges";
 import Reveal from "@/components/Reveal";
 import Gallery from "@/components/Gallery";
 import ReviewCard from "@/components/ReviewCard";
+import ShareRow from "@/components/ShareRow";
 
 type Params = { params: Promise<{ slug: string }> };
 
@@ -22,7 +29,7 @@ export const dynamic = "force-dynamic";
 export async function generateMetadata({ params }: Params): Promise<Metadata> {
   const { slug } = await params;
   const review = await getReview(slug);
-  if (!review) return {};
+  if (!review || review.draft) return {};
   return {
     title: review.name,
     description: review.verdict,
@@ -39,15 +46,26 @@ export default async function ReviewPage({ params }: Params) {
   const { slug } = await params;
   const all = await getAllReviews();
   const review = all.find((r) => r.slug === slug);
-  if (!review) notFound();
+  // Drafts don't exist as far as the public site is concerned — even
+  // with a direct link, they 404 exactly like a slug that was never
+  // created. /edit is the only place to preview one.
+  if (!review || review.draft) notFound();
+  const published = publishedOnly(all);
 
   const cover = review.photos?.[0] ?? null;
   const gallery = review.photos ?? [];
   const hasLocation = review.lat != null && review.lng != null;
   const cuisine = parseCuisine(review.cuisine, review.cuisineFamily);
   const back = returnCount(review);
-  const more = sortByDate(all)
+  const more = sortByDate(published)
     .filter((r) => r.slug !== review.slug && r.city === review.city)
+    .slice(0, 3);
+  // Same kitchen / similar price+verdict, excluding whatever the
+  // same-city block above already showed so the two sections don't
+  // repeat the same three restaurants.
+  const moreSlugs = new Set(more.map((r) => r.slug));
+  const similar = relatedReviews(published, review)
+    .filter((r) => !moreSlugs.has(r.review.slug))
     .slice(0, 3);
 
   return (
@@ -294,6 +312,9 @@ export default async function ReviewPage({ params }: Params) {
                 ))}
               </ul>
             )}
+            <div className="mt-5 border-t border-line pt-4">
+              <ShareRow slug={review.slug} />
+            </div>
           </div>
         </Reveal>
 
@@ -311,6 +332,25 @@ export default async function ReviewPage({ params }: Params) {
           </Reveal>
         )}
       </div>
+
+      {/* ---- If you liked this ---- */}
+      {similar.length > 0 && (
+        <section className="mx-auto mt-24 max-w-6xl px-6">
+          <Reveal className="mb-8">
+            <p className="eyebrow">In the same vein</p>
+            <h2 className="mt-2 font-display text-3xl">
+              If you liked {review.name}
+            </h2>
+          </Reveal>
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {similar.map(({ review: r }, i) => (
+              <Reveal key={r.slug} delay={i * 0.06}>
+                <ReviewCard review={r} />
+              </Reveal>
+            ))}
+          </div>
+        </section>
+      )}
 
       {/* ---- More in this city ---- */}
       {more.length > 0 && (

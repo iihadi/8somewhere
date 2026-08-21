@@ -2,7 +2,7 @@ import "server-only";
 import { head, put, del, BlobNotFoundError } from "@vercel/blob";
 import { mkdir, readFile, unlink, writeFile } from "node:fs/promises";
 import path from "node:path";
-import { seedReviews, type Review } from "@/data/seed-reviews";
+import { seedReviews, wishlist as seedWishlist, type Review, type WishlistItem } from "@/data/seed-reviews";
 
 /**
  * Two backends behind one interface, picked automatically:
@@ -87,6 +87,56 @@ export async function writeReviewsData(reviews: Review[]): Promise<void> {
 
   await mkdir(path.dirname(LOCAL_DATA_PATH), { recursive: true });
   await writeFile(LOCAL_DATA_PATH, JSON.stringify(reviews, null, 2), "utf8");
+}
+
+const WISHLIST_BLOB_PATH = "data/wishlist.json";
+const LOCAL_WISHLIST_PATH = path.join(process.cwd(), "data", "wishlist.local.json");
+
+export async function readWishlistData(): Promise<WishlistItem[]> {
+  if (useBlob()) {
+    let meta;
+    try {
+      meta = await head(WISHLIST_BLOB_PATH, { token: blobToken() });
+    } catch (err) {
+      if (err instanceof BlobNotFoundError) {
+        await writeWishlistData(seedWishlist);
+        return seedWishlist;
+      }
+      throw err;
+    }
+
+    const res = await fetch(meta.url, { cache: "no-store" });
+    if (!res.ok) {
+      throw new Error(`Failed to fetch wishlist blob: ${res.status}`);
+    }
+    return (await res.json()) as WishlistItem[];
+  }
+
+  try {
+    const raw = await readFile(LOCAL_WISHLIST_PATH, "utf8");
+    return JSON.parse(raw) as WishlistItem[];
+  } catch (err) {
+    if ((err as NodeJS.ErrnoException).code === "ENOENT") {
+      await writeWishlistData(seedWishlist);
+      return seedWishlist;
+    }
+    throw err;
+  }
+}
+
+export async function writeWishlistData(items: WishlistItem[]): Promise<void> {
+  if (useBlob()) {
+    await put(WISHLIST_BLOB_PATH, JSON.stringify(items, null, 2), {
+      access: "public",
+      addRandomSuffix: false,
+      contentType: "application/json",
+      token: blobToken(),
+    });
+    return;
+  }
+
+  await mkdir(path.dirname(LOCAL_WISHLIST_PATH), { recursive: true });
+  await writeFile(LOCAL_WISHLIST_PATH, JSON.stringify(items, null, 2), "utf8");
 }
 
 /**
