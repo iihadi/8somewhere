@@ -7,6 +7,7 @@ import { TIER_ORDER, TIERS, type Tier } from "@/lib/tiers";
 import type { BadgeKey } from "@/lib/badges";
 import { parseCuisine, FAMILY_NAMES, UNSPECIFIED } from "@/lib/cuisine";
 import type { GeocodeResult } from "@/app/api/edit/geocode/route";
+import type { EnrichMatch } from "@/app/api/edit/enrich/route";
 import Stars from "@/components/Stars";
 import Spinner from "@/components/Spinner";
 import DateField from "./DateField";
@@ -14,6 +15,7 @@ import PhotoManager from "./PhotoManager";
 import TagInput from "./TagInput";
 import VisitCounter from "./VisitCounter";
 import BadgePicker from "./BadgePicker";
+import RestaurantLookup from "./RestaurantLookup";
 import { inputCls, labelCls, hintCls } from "./fields";
 import { SLUG_RE, slugify } from "@/lib/slug";
 import { findPossibleDuplicates, type DuplicateCandidate } from "@/lib/duplicates";
@@ -162,6 +164,20 @@ export default function ReviewForm({
     setLocOpen(false);
   }
 
+  // ---- restaurant lookup (OpenStreetMap) — fills in whatever's still
+  // blank, never overwrites something already typed. ----
+  function applyLookup(match: EnrichMatch) {
+    setFields((f) => ({
+      ...f,
+      cuisine: f.cuisine.trim() ? f.cuisine : match.cuisine || f.cuisine,
+      address: f.address ?? match.address,
+      city: f.city.trim() ? f.city : match.city || f.city,
+      country: f.country.trim() ? f.country : match.country || f.country,
+      lat: f.lat ?? match.lat ?? undefined,
+      lng: f.lng ?? match.lng ?? undefined,
+    }));
+  }
+
   function onNameChange(v: string) {
     set("name", v);
     if (mode === "create" && !slugTouched) setSlug(slugify(v));
@@ -282,8 +298,19 @@ export default function ReviewForm({
       // Clear the guard before navigating, or leaving prompts about
       // changes that were in fact just saved.
       setBaseline(JSON.stringify({ slug, fields: { ...fields, draft } }));
-      router.push("/edit");
-      router.refresh();
+      setSaving(false);
+      if (mode === "create") {
+        // Land on the edit page for what was just created, not the
+        // dashboard — you're almost always about to add photos next,
+        // and having to find it again in the list first was friction
+        // for no reason.
+        router.push(`/edit/${slug}`);
+      } else {
+        // Stay put on ⌘S / "Save & publish" like every other editor —
+        // it used to bounce back to the dashboard on every save, which
+        // made it impossible to save-and-keep-working.
+        router.refresh();
+      }
       return;
     }
     const data = await res.json().catch(() => ({}));
@@ -539,6 +566,15 @@ export default function ReviewForm({
                 </div>
               </div>
             )}
+          </div>
+
+          <div className="sm:col-span-2">
+            <RestaurantLookup
+              defaultQuery={fields.name}
+              defaultCity={fields.city}
+              onPick={applyLookup}
+              label="Look up restaurant details (fills in whatever's still blank — cuisine, address, coordinates)"
+            />
           </div>
 
           {/* ---- Cuisine, with the family it will be filed under ---- */}

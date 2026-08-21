@@ -48,6 +48,13 @@ export default async function AboutPage() {
             </>
           )}
         </p>
+
+        <p className="leading-[1.85] text-cream/80">
+          The homepage&rsquo;s &ldquo;Three stars&rdquo; list is curated by
+          hand rather than sorted automatically — I can drag it into
+          whatever order actually reflects the pecking order, not just
+          whatever the data happens to fall into.
+        </p>
       </Reveal>
 
       <Reveal delay={0.1} className="mt-16 space-y-4">
@@ -72,6 +79,44 @@ export default async function AboutPage() {
             </li>
           ))}
         </ul>
+      </Reveal>
+
+      <Reveal delay={0.13} className="mt-16 space-y-4">
+        <p className="eyebrow">Getting around</p>
+        <p className="leading-[1.85] text-cream/80">
+          <Link
+            href="/cuisines"
+            className="text-cream underline decoration-ember/40 underline-offset-4 transition-colors hover:decoration-ember"
+          >
+            Cuisines
+          </Link>{" "}
+          groups everything by kitchen rather than by whatever string got
+          typed in on the night, so &ldquo;French tasting menu&rdquo; and
+          &ldquo;Modern French&rdquo; live in the same section — with a
+          small pill next to each name for the more specific style, where
+          there is one, like &ldquo;Bistro&rdquo; under French.
+        </p>
+        <p className="leading-[1.85] text-cream/80">
+          A place marked <span className="text-[#e0554f]">now closed</span>{" "}
+          still keeps its review — the verdict was true on the night — but
+          gets flagged in red everywhere it appears, so it&rsquo;s obvious
+          before you go to the trouble of booking somewhere that no longer
+          exists.
+        </p>
+        <p className="leading-[1.85] text-cream/80">
+          <Link
+            href="/future-destinations"
+            className="text-cream underline decoration-ember/40 underline-offset-4 transition-colors hover:decoration-ember"
+          >
+            Future destinations
+          </Link>{" "}
+          is what used to be a plain wishlist — booked or just on the
+          list, each one tagged with what kind of restaurant it is rather
+          than a date, since most of these don&rsquo;t have one yet.
+          Behind the scenes, adding a new entry can pull that tag (plus
+          address and coordinates) from OpenStreetMap automatically
+          instead of me typing it all in by hand.
+        </p>
       </Reveal>
 
       <Reveal delay={0.15} className="mt-16 space-y-4">

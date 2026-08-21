@@ -52,6 +52,24 @@ export function sortByTier(reviews: Review[]): Review[] {
   );
 }
 
+/**
+ * The homepage "Three stars" list's order — a manual curation via
+ * drag-and-drop in /edit/featured, not a derived ranking. Reviews with
+ * a `featuredRank` sort first, lowest rank first; anything unranked
+ * (including tiers other than "loved", which never get one) falls in
+ * after, most recently visited first.
+ */
+export function sortFeatured(reviews: Review[]): Review[] {
+  return [...reviews].sort((a, b) => {
+    const ar = a.featuredRank;
+    const br = b.featuredRank;
+    if (ar != null && br != null) return ar - br;
+    if (ar != null) return -1;
+    if (br != null) return 1;
+    return sortKey(b) - sortKey(a);
+  });
+}
+
 export function getCities(reviews: Review[]): string[] {
   return Array.from(new Set(reviews.map((r) => r.city))).sort();
 }

@@ -3,11 +3,14 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import type { WishlistItem } from "@/data/seed-reviews";
+import type { EnrichMatch } from "@/app/api/edit/enrich/route";
 import { slugify, SLUG_RE } from "@/lib/slug";
 import Spinner from "@/components/Spinner";
+import StylePill from "@/components/StylePill";
+import RestaurantLookup from "./RestaurantLookup";
 import { inputCls, labelCls } from "./fields";
 
-const EMPTY = { name: "", city: "", note: "", plannedFor: "" };
+const EMPTY = { name: "", city: "", note: "", cuisine: "" };
 
 export default function WishlistManager({ items }: { items: WishlistItem[] }) {
   const router = useRouter();
@@ -15,7 +18,21 @@ export default function WishlistManager({ items }: { items: WishlistItem[] }) {
   const [draft, setDraft] = useState(EMPTY);
   const [adding, setAdding] = useState(false);
   const [converting, setConverting] = useState<string | null>(null);
+  const [lookupId, setLookupId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  async function applyLookup(item: WishlistItem, match: EnrichMatch) {
+    const patch: Partial<WishlistItem> = { cuisine: match.cuisine || item.cuisine };
+    if (item.city === "—" && match.city) patch.city = match.city;
+    setList((l) => l.map((w) => (w.id === item.id ? { ...w, ...patch } : w)));
+    setLookupId(null);
+    const res = await fetch(`/api/edit/wishlist/${item.id}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(patch),
+    });
+    if (!res.ok) setError("Failed to save the lookup — try again.");
+  }
 
   async function addItem(e: React.FormEvent) {
     e.preventDefault();
@@ -28,7 +45,7 @@ export default function WishlistManager({ items }: { items: WishlistItem[] }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...draft,
-          plannedFor: draft.plannedFor || undefined,
+          cuisine: draft.cuisine || undefined,
         }),
       });
       const data = await res.json();
@@ -64,7 +81,7 @@ export default function WishlistManager({ items }: { items: WishlistItem[] }) {
       city: item.city === "—" ? "" : item.city,
       country: "",
       address: null,
-      cuisine: "",
+      cuisine: item.cuisine ?? "",
       visitedAt: null,
       price: null,
       tier: "unlogged",
@@ -137,6 +154,15 @@ export default function WishlistManager({ items }: { items: WishlistItem[] }) {
             onChange={(e) => setDraft((d) => ({ ...d, city: e.target.value }))}
           />
         </div>
+        <div className="space-y-1.5">
+          <label className={labelCls}>Kind of restaurant (optional)</label>
+          <input
+            className={inputCls}
+            value={draft.cuisine}
+            onChange={(e) => setDraft((d) => ({ ...d, cuisine: e.target.value }))}
+            placeholder="e.g. Modern British tasting menu"
+          />
+        </div>
         <div className="space-y-1.5 sm:col-span-2">
           <label className={labelCls}>Note</label>
           <input
@@ -146,15 +172,6 @@ export default function WishlistManager({ items }: { items: WishlistItem[] }) {
             placeholder="Booked ahead, waiting on a birthday, etc."
           />
         </div>
-        <div className="space-y-1.5">
-          <label className={labelCls}>Planned for (optional)</label>
-          <input
-            type="date"
-            className={`${inputCls} [color-scheme:dark]`}
-            value={draft.plannedFor}
-            onChange={(e) => setDraft((d) => ({ ...d, plannedFor: e.target.value }))}
-          />
-        </div>
         <div className="flex items-end sm:col-span-1">
           <button
             type="submit"
@@ -162,7 +179,7 @@ export default function WishlistManager({ items }: { items: WishlistItem[] }) {
             className="flex items-center gap-2 rounded-full bg-cream px-5 py-2.5 text-sm font-medium text-ink transition-opacity disabled:opacity-50"
           >
             {adding && <Spinner />}
-            Add to wishlist
+            Add to the list
           </button>
         </div>
       </form>
@@ -175,32 +192,56 @@ export default function WishlistManager({ items }: { items: WishlistItem[] }) {
 
       <ul className="divide-y divide-line overflow-hidden rounded-2xl border border-line bg-surface">
         {list.map((w) => (
-          <li key={w.id} className="flex flex-wrap items-center gap-4 px-5 py-4">
-            <div className="min-w-0 flex-1">
-              <p className="truncate font-display text-lg">{w.name}</p>
-              <p className="truncate text-xs text-muted">
-                {w.city}
-                {w.note && ` · ${w.note}`}
-              </p>
+          <li key={w.id} className="px-5 py-4">
+            <div className="flex flex-wrap items-center gap-4">
+              <div className="min-w-0 flex-1">
+                <p className="flex flex-wrap items-center gap-2">
+                  <span className="truncate font-display text-lg">{w.name}</span>
+                  {w.cuisine && <StylePill>{w.cuisine}</StylePill>}
+                </p>
+                <p className="truncate text-xs text-muted">
+                  {w.city}
+                  {w.note && ` · ${w.note}`}
+                </p>
+              </div>
+              <div className="flex shrink-0 items-center gap-3">
+                {!w.cuisine && (
+                  <button
+                    type="button"
+                    onClick={() => setLookupId(lookupId === w.id ? null : w.id)}
+                    className="text-sm text-muted underline decoration-line underline-offset-4 hover:text-cream"
+                  >
+                    {lookupId === w.id ? "Cancel lookup" : "Look up details"}
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={() => convert(w)}
+                  disabled={converting === w.id}
+                  className="flex items-center gap-1.5 rounded-full border border-ember/30 bg-ember/10 px-3.5 py-1.5 text-xs text-ember transition-opacity disabled:opacity-50"
+                >
+                  {converting === w.id && <Spinner className="h-3 w-3" />}
+                  {converting === w.id ? "Converting…" : "Convert to draft review"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => removeItem(w.id)}
+                  className="text-sm text-muted hover:text-[#e0554f]"
+                >
+                  Remove
+                </button>
+              </div>
             </div>
-            <div className="flex shrink-0 items-center gap-3">
-              <button
-                type="button"
-                onClick={() => convert(w)}
-                disabled={converting === w.id}
-                className="flex items-center gap-1.5 rounded-full border border-ember/30 bg-ember/10 px-3.5 py-1.5 text-xs text-ember transition-opacity disabled:opacity-50"
-              >
-                {converting === w.id && <Spinner className="h-3 w-3" />}
-                {converting === w.id ? "Converting…" : "Convert to draft review"}
-              </button>
-              <button
-                type="button"
-                onClick={() => removeItem(w.id)}
-                className="text-sm text-muted hover:text-[#e0554f]"
-              >
-                Remove
-              </button>
-            </div>
+            {lookupId === w.id && (
+              <div className="mt-3">
+                <RestaurantLookup
+                  defaultQuery={w.name}
+                  defaultCity={w.city === "—" ? "" : w.city}
+                  onPick={(match) => applyLookup(w, match)}
+                  label="Search to fill in the kind of restaurant"
+                />
+              </div>
+            )}
           </li>
         ))}
       </ul>

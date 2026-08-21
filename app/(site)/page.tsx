@@ -6,7 +6,10 @@ import Badges from "@/components/Badges";
 import Reveal from "@/components/Reveal";
 import Hero from "@/components/Hero";
 import TierBadge from "@/components/TierBadge";
+import ClosedBadge from "@/components/ClosedBadge";
+import AnimatedNumber from "@/components/AnimatedNumber";
 import { formatShortDate } from "@/lib/format";
+import { sortFeatured } from "@/lib/derive";
 
 export const dynamic = "force-dynamic";
 
@@ -23,7 +26,7 @@ export default async function Home() {
   const recent = sortByDate(reviews)
     .filter((r) => r.visitedAt)
     .slice(0, 6);
-  const loved = reviews.filter((r) => r.tier === "loved");
+  const loved = sortFeatured(reviews.filter((r) => r.tier === "loved"));
   const avoid = reviews.filter((r) => r.tier === "avoid");
   const throwback = onThisDay(reviews);
   /** The badge answer to "where should I eat" — not the same as the
@@ -50,7 +53,9 @@ export default async function Home() {
               },
             ].map((s) => (
               <div key={s.k} className="bg-surface px-6 py-8">
-                <dd className="font-display text-4xl">{s.v}</dd>
+                <dd className="font-display text-4xl">
+                  <AnimatedNumber value={s.v} />
+                </dd>
                 <dt className="eyebrow mt-2">{s.k}</dt>
               </div>
             ))}
@@ -165,8 +170,11 @@ export default async function Home() {
                       {String(i + 1).padStart(2, "0")}
                     </span>
                     <span className="min-w-0 flex-1">
-                      <span className="block truncate font-display text-xl">
-                        {r.name}
+                      <span className="flex flex-wrap items-center gap-2">
+                        <span className="truncate font-display text-xl">
+                          {r.name}
+                        </span>
+                        {r.closed && <ClosedBadge size="sm" />}
                       </span>
                       <span className="block truncate text-sm text-muted">
                         {r.cuisine} · {r.city}
@@ -231,11 +239,7 @@ export default async function Home() {
                     className="flex flex-wrap items-baseline gap-x-4 gap-y-2 px-6 py-5 transition-colors hover:bg-surface-2"
                   >
                     <span className="font-display text-xl">{r.name}</span>
-                    {r.closed && (
-                      <span className="text-xs uppercase tracking-wider text-muted">
-                        now closed
-                      </span>
-                    )}
+                    {r.closed && <ClosedBadge size="sm" />}
                     <span className="w-full text-sm text-muted sm:w-auto sm:flex-1">
                       {r.verdict}
                     </span>

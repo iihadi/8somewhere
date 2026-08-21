@@ -86,6 +86,21 @@ export async function bulkUpdateReviews(
   return touched;
 }
 
+/**
+ * Persists a drag-and-drop reorder of the homepage "Three stars" list.
+ * `slugs` is the full desired order of every tier: "loved" review;
+ * `featuredRank` is written as its index in that array. Anything not
+ * loved is left untouched — this never needs to touch it.
+ */
+export async function reorderFeatured(slugs: string[]): Promise<void> {
+  const rank = new Map(slugs.map((slug, i) => [slug, i]));
+  const all = await readFresh();
+  const next = all.map((r) =>
+    rank.has(r.slug) ? { ...r, featuredRank: rank.get(r.slug) } : r
+  );
+  await writeReviewsData(next);
+}
+
 /* ------------------------------------------------------------------ */
 /* Wishlist                                                             */
 /* ------------------------------------------------------------------ */
@@ -109,4 +124,17 @@ export async function deleteWishlistItem(id: string): Promise<void> {
   const next = all.filter((w) => w.id !== id);
   if (next.length === all.length) throw new Error(`No wishlist item with id "${id}".`);
   await writeWishlistData(next);
+}
+
+export async function updateWishlistItem(
+  id: string,
+  patch: Partial<Omit<WishlistItem, "id">>
+): Promise<WishlistItem> {
+  const all = await readWishlistData();
+  const idx = all.findIndex((w) => w.id === id);
+  if (idx === -1) throw new Error(`No wishlist item with id "${id}".`);
+  const updated: WishlistItem = { ...all[idx], ...patch };
+  all[idx] = updated;
+  await writeWishlistData(all);
+  return updated;
 }

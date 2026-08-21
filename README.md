@@ -53,7 +53,7 @@ on first request.
 | `/map` | Every pinned restaurant on one Leaflet/OpenStreetMap map, pins coloured and numbered by rating |
 | `/cuisines` | Grouped by what each place actually cooks, most-visited first |
 | `/stats` | Rating spread, price spread, meals per year, cuisine and city breakdowns |
-| `/wishlist` | Booked or planned, not yet visited |
+| `/future-destinations` | Booked or planned, not yet visited |
 | `/about` | Why the site exists and how the scoring works |
 | `/feed.xml` | RSS feed of the 50 most recent reviews |
 
@@ -115,6 +115,27 @@ browsers won't let client-side code set directly. It's gated behind
 `/edit` auth like the rest of the admin API. Nominatim's usage policy
 asks for roughly one request per second at most — normal typing-speed
 searching from a single admin stays well under that.
+
+### Populating restaurant data — "Look up restaurant details"
+
+Typing in cuisine and address by hand for every entry gets old. The
+"Look up restaurant details" box (in the review form, and next to any
+Future destination that's missing a "kind of restaurant" tag) searches
+name + city and fills in whatever's still blank, via
+[`/api/edit/enrich`](app/api/edit/enrich/route.ts) — the same free
+Nominatim/OpenStreetMap service `/api/edit/geocode` already uses for
+addresses, just asked for more (`extratags=1`). OSM restaurant entries
+are often tagged with a `cuisine` value, which is enough to auto-fill
+"what kind of restaurant is this" without typing it in.
+
+This was the easiest realistic option and needs **no API key at all**:
+Yelp Fusion needs a developer sign-up to get a key, and Google Places
+wants a billing account on file even to stay inside its free tier.
+Nominatim needs neither — same zero-setup story as the rest of this
+project. The tradeoff is coverage: not every OSM entry carries a
+cuisine tag, and OSM has no price data, so treat it as a head start
+rather than a guarantee — the fields it can't find are simply left for
+you to fill in by hand.
 
 ### The dashboard — filtering and sorting
 
@@ -244,7 +265,7 @@ app/
     map/                     all pinned restaurants on one Leaflet map
     cuisines/                grouped by kind of cooking
     stats/                   ratings, prices, years, cuisines, cities
-    wishlist/                places not yet visited (static, not editable)
+    future-destinations/     places not yet visited
     about/                    scoring key + tier counts
   feed.xml/route.ts         RSS feed
   edit/                    the admin UI — outside the (site) group

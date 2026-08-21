@@ -4,15 +4,15 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { motion, useScroll, useMotionValueEvent } from "framer-motion";
 import { useState } from "react";
-import Image from "next/image";
 import Brand from "@/components/Brand";
+import LogoMark from "@/components/LogoMark";
 
 const links = [
   { href: "/reviews", label: "Reviews" },
   { href: "/map", label: "Map" },
   { href: "/cuisines", label: "Cuisines" },
   { href: "/stats", label: "Stats" },
-  { href: "/wishlist", label: "Wishlist" },
+  { href: "/future-destinations", label: "Future destinations" },
   { href: "/about", label: "About" },
 ];
 
@@ -41,13 +41,7 @@ export default function Nav() {
       <nav className="mx-auto flex max-w-6xl flex-wrap items-center justify-between gap-x-6 gap-y-2 px-6 py-4">
         <Link href="/" className="group flex items-center gap-2.5">
           <span className="grid h-9 w-9 place-items-center rounded-full bg-surface-2 ring-1 ring-line transition-transform duration-500 group-hover:rotate-12">
-            <Image
-              src="/logo-mark.png"
-              alt=""
-              width={28}
-              height={27}
-              className="opacity-90"
-            />
+            <LogoMark className="h-6 w-6" />
           </span>
           <Brand className="font-display text-lg tracking-tight" />
         </Link>

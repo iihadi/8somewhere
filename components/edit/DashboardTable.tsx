@@ -11,6 +11,7 @@ import { formatShortDate } from "@/lib/format";
 import { returnCount } from "@/lib/derive";
 import Stars from "@/components/Stars";
 import Badges from "@/components/Badges";
+import ClosedBadge from "@/components/ClosedBadge";
 import Spinner from "@/components/Spinner";
 import DeleteReviewButton from "./DeleteReviewButton";
 
@@ -278,11 +279,7 @@ export default function DashboardTable({ reviews }: { reviews: Review[] }) {
                     Draft
                   </span>
                 )}
-                {r.closed && (
-                  <span className="shrink-0 rounded-full border border-line px-2 py-0.5 text-[0.6rem] uppercase tracking-wider text-muted">
-                    Closed
-                  </span>
-                )}
+                {r.closed && <ClosedBadge size="sm" />}
               </p>
               <p className="truncate text-xs text-muted">
                 {r.city} · {r.cuisine}
