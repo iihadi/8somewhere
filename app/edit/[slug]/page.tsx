@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { getAllReviews } from "@/lib/repo";
 import { getCities, getCuisines } from "@/lib/derive";
+import { storageMode } from "@/lib/storage";
 import ReviewForm from "@/components/edit/ReviewForm";
 
 export const dynamic = "force-dynamic";
@@ -48,6 +49,7 @@ export default async function EditReviewPage({ params }: Params) {
           existingReviews={reviews.map((r) => ({ slug: r.slug, name: r.name, city: r.city }))}
           citySuggestions={getCities(reviews)}
           tagSuggestions={getTags(reviews)}
+          storageMode={storageMode()}
         />
       </div>
     </div>

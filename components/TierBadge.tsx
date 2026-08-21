@@ -18,10 +18,11 @@ export default function TierBadge({
 
   return (
     <span
-      className={`inline-flex shrink-0 items-center gap-2 rounded-full border ${pad}`}
+      className={`accent-glow inline-flex shrink-0 items-center gap-2 rounded-full border ${pad}`}
       style={{
         borderColor: `color-mix(in oklab, ${t.accent} 35%, transparent)`,
         backgroundColor: `color-mix(in oklab, ${t.accent} 12%, transparent)`,
+        ["--glow" as string]: t.accent,
       }}
     >
       <Stars tier={tier} size={size} />

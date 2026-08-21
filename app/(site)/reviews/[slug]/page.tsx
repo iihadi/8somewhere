@@ -9,6 +9,7 @@ import {
   revisitLabel,
   publishedOnly,
   relatedReviews,
+  chronologicalNeighbors,
 } from "@/lib/derive";
 import { parseCuisine } from "@/lib/cuisine";
 import { TIERS } from "@/lib/tiers";
@@ -22,6 +23,7 @@ import Reveal from "@/components/Reveal";
 import Gallery from "@/components/Gallery";
 import ReviewCard from "@/components/ReviewCard";
 import ShareRow from "@/components/ShareRow";
+import PrevNextNav from "@/components/PrevNextNav";
 
 type Params = { params: Promise<{ slug: string }> };
 
@@ -55,6 +57,7 @@ export default async function ReviewPage({ params }: Params) {
 
   const cover = review.photos?.[0] ?? null;
   const gallery = review.photos ?? [];
+  const galleryVideos = review.videos ?? [];
   const hasLocation = review.lat != null && review.lng != null;
   const cuisine = parseCuisine(review.cuisine, review.cuisineFamily);
   const back = returnCount(review);
@@ -68,6 +71,7 @@ export default async function ReviewPage({ params }: Params) {
   const similar = relatedReviews(published, review)
     .filter((r) => !moreSlugs.has(r.review.slug))
     .slice(0, 3);
+  const { prev: newerReview, next: olderReview } = chronologicalNeighbors(published, review);
 
   return (
     <article className="pb-24">
@@ -257,7 +261,12 @@ export default async function ReviewPage({ params }: Params) {
 
         {/* ---- Photos ---- */}
         <Reveal>
-          <Gallery slug={review.slug} name={review.name} photos={gallery} />
+          <Gallery
+            slug={review.slug}
+            name={review.name}
+            photos={gallery}
+            videos={galleryVideos}
+          />
         </Reveal>
 
         {/* ---- Map ---- */}
@@ -314,6 +323,13 @@ export default async function ReviewPage({ params }: Params) {
             </div>
           </div>
         </Reveal>
+
+        {/* ---- Prev / next ---- */}
+        {(newerReview || olderReview) && (
+          <Reveal>
+            <PrevNextNav prev={newerReview} next={olderReview} />
+          </Reveal>
+        )}
 
         {/* ---- Tags ---- */}
         {review.tags.length > 0 && (

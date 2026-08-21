@@ -31,6 +31,9 @@ export default function Footer({
           <Link href="/stats" className="hover:text-cream transition-colors">
             Stats
           </Link>
+          <Link href="/timeline" className="hover:text-cream transition-colors">
+            Timeline
+          </Link>
           <Link href="/future-destinations" className="hover:text-cream transition-colors">
             Future destinations
           </Link>

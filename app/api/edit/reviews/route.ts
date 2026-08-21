@@ -57,6 +57,7 @@ export async function POST(req: Request) {
     body: body.body ?? [],
     tags: body.tags ?? [],
     photos: body.photos ?? [],
+    videos: body.videos ?? [],
     closed: body.closed ?? undefined,
     revisited: visits > 1 ? true : undefined,
     visitCount: visits > 1 ? visits : undefined,

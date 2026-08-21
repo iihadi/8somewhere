@@ -7,6 +7,8 @@ import { TIERS, TIER_ORDER, type Tier } from "@/lib/tiers";
 import { BADGES, type BadgeKey } from "@/lib/badges";
 import { badgesPresent, visitCount } from "@/lib/derive";
 import { parseCuisine } from "@/lib/cuisine";
+import { searchReviews } from "@/lib/search";
+import { usePrefersReducedMotion } from "@/lib/motion";
 import ReviewCard from "./ReviewCard";
 import Stars from "./Stars";
 
@@ -17,6 +19,7 @@ function sortKey(r: Review) {
 }
 
 export default function ReviewGrid({ reviews }: { reviews: Review[] }) {
+  const reduce = usePrefersReducedMotion();
   const [city, setCity] = useState("All");
   const [tier, setTier] = useState<Tier | "All">("All");
   const [badge, setBadge] = useState<BadgeKey | "All">("All");
@@ -47,9 +50,19 @@ export default function ReviewGrid({ reviews }: { reviews: Review[] }) {
     [reviews]
   );
 
-  const shown = useMemo(() => {
-    const q = query.trim().toLowerCase();
+  // Text search reuses lib/search.ts's searchReviews rather than a
+  // second, narrower hand-rolled filter — it used to only match
+  // name/cuisine/verdict/quote/tags here, missing dishes and body text
+  // that /search already catches. Its 2-character minimum is kept as-is
+  // (not special-cased down to 1) so this box behaves identically to
+  // /search's.
+  const searched = useMemo(() => {
+    const q = query.trim();
+    if (!q) return null;
+    return new Set(searchReviews(reviews, q).map((h) => h.review.slug));
+  }, [reviews, query]);
 
+  const shown = useMemo(() => {
     const filtered = reviews.filter((r) => {
       if (city !== "All" && r.city !== city) return false;
       if (tier !== "All" && r.tier !== tier) return false;
@@ -60,14 +73,8 @@ export default function ReviewGrid({ reviews }: { reviews: Review[] }) {
       ) {
         return false;
       }
-      if (!q) return true;
-      return (
-        r.name.toLowerCase().includes(q) ||
-        r.cuisine.toLowerCase().includes(q) ||
-        r.verdict.toLowerCase().includes(q) ||
-        (r.quote ?? "").toLowerCase().includes(q) ||
-        r.tags.some((t) => t.toLowerCase().includes(q))
-      );
+      if (searched && !searched.has(r.slug)) return false;
+      return true;
     });
 
     return filtered.sort((a, b) => {
@@ -80,7 +87,7 @@ export default function ReviewGrid({ reviews }: { reviews: Review[] }) {
         return visitCount(b) - visitCount(a) || sortKey(b) - sortKey(a);
       return sortKey(b) - sortKey(a);
     });
-  }, [reviews, city, tier, badge, cuisine, query, sort]);
+  }, [reviews, city, tier, badge, cuisine, searched, sort]);
 
   return (
     <div className="space-y-8">
@@ -98,7 +105,11 @@ export default function ReviewGrid({ reviews }: { reviews: Review[] }) {
                 <motion.span
                   layoutId="city-pill"
                   className="absolute inset-0 rounded-full bg-cream"
-                  transition={{ type: "spring", stiffness: 400, damping: 34 }}
+                  transition={
+                    reduce
+                      ? { duration: 0 }
+                      : { type: "spring", stiffness: 400, damping: 34 }
+                  }
                 />
               )}
               <span className="relative">{c}</span>
