@@ -1,0 +1,102 @@
+---
+import Base from '../layouts/Base.astro';
+import PageHead from '../components/PageHead.astro';
+import { legend } from '../lib/menu';
+import { phoneHref, site } from '../lib/site';
+import { breadcrumbs } from '../lib/jsonld';
+---
+
+<Base path="/allergens/" jsonld={[breadcrumbs([{ name: 'Allergen guide', path: '/allergens/' }])]}>
+  <PageHead title="Allergen guide" lede="Please tell us about any allergy before you order." />
+
+  <section class="section">
+    <div class="wrap prose-wrap">
+      <div class="prose">
+        <p>
+          The 14 major allergens are handled in our kitchen. Some dishes contain nuts. Every dish on our main menu carries allergen codes taken from our allergy
+          sheet, so you can see at a glance what it contains.
+        </p>
+        <p>
+          The codes and the filter on the menu are a quick guide only. Recipes and suppliers can change, so
+          <strong>please always tell us about any allergy when you book, when you order and again when you arrive.</strong>
+          Our staff will talk you through the dishes.
+        </p>
+        <p>
+          Dishes are prepared in a busy kitchen where allergens are present, so we cannot guarantee that any dish is
+          completely free from traces of allergens.
+        </p>
+      </div>
+
+      <h2 class="section-title sub">Allergen codes</h2>
+      <dl class="codes">
+        {
+          Object.entries(legend).map(([code, label]) => (
+            <div>
+              <dt>{code}</dt>
+              <dd>{label}</dd>
+            </div>
+          ))
+        }
+      </dl>
+      <p class="small muted">
+        Where a dish shows "Allergens not yet confirmed, please ask", we have not yet confirmed its allergen information. Please
+        ask our staff before ordering it.
+      </p>
+
+      <h2 class="section-title sub">Using the menu filter</h2>
+      <div class="prose">
+        <p>
+          On the main menu you can hide dishes that contain one or more allergens. When the filter is on, dishes whose
+          allergen information is not confirmed are hidden too, and the page tells you how many.
+        </p>
+      </div>
+      <div class="btn-row actions">
+        <a class="btn btn-solid" href="/menu/#filter">Filter the main menu</a>
+        <a class="btn btn-outline" href="/menu/dairy-free/">Dairy-free menu</a>
+      </div>
+
+      <h2 class="section-title sub">Dairy-free dishes</h2>
+      <div class="prose">
+        <p>
+          Our dairy-free menu is cooked to order and takes a little longer to prepare. It is available on Sunday,
+          Tuesday, Wednesday and Thursday for pre-booked tables. On Friday and Saturday, dishes must be pre-ordered.
+        </p>
+      </div>
+
+      <h2 class="section-title sub">Talk to us</h2>
+      <div class="prose">
+        <p>
+          Call <a href={phoneHref}>{site.phone.display}</a> before you book or order and we will help you choose.
+        </p>
+      </div>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .prose-wrap {
+    max-width: calc(var(--measure) + 2 * var(--space-gutter));
+  }
+  .sub {
+    margin: 48px 0 16px;
+  }
+  .codes {
+    margin: 0 0 16px;
+  }
+  .codes div {
+    display: flex;
+    gap: 16px;
+    padding: 10px 0;
+    border-bottom: 1px solid var(--color-hairline);
+  }
+  dt {
+    flex: 0 0 40px;
+    font-weight: 500;
+  }
+  dd {
+    margin: 0;
+  }
+  .actions {
+    margin-top: 24px;
+  }
+</style>

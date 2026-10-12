@@ -1,0 +1,53 @@
+---
+// Server-renders the plain hours, then enhances to "Open now, until 22:00" etc. in Europe/London.
+import { closures, hoursSummary, site } from '../lib/site';
+
+interface Props {
+  class?: string;
+}
+const data = JSON.stringify({ hours: site.hours, closures: closures.map((c) => ({ from: c.from, to: c.to })) });
+---
+
+<p class:list={['open-now', Astro.props.class]} data-hours={data}>{hoursSummary}</p>
+
+<script>
+  import { addDays, londonNow, weekdayOf } from '../scripts/time';
+
+  type Hours = { days: string[]; opens: string; closes: string };
+  type Range = { from: string; to: string };
+
+  const toMin = (t: string) => Number(t.slice(0, 2)) * 60 + Number(t.slice(3, 5));
+
+  function hoursFor(date: string, hours: Hours[], closures: Range[]): Hours | undefined {
+    if (closures.some((c) => date >= c.from && date <= c.to)) return undefined;
+    const day = weekdayOf(date);
+    return hours.find((h) => h.days.includes(day));
+  }
+
+  function describe(el: HTMLElement) {
+    const { hours, closures } = JSON.parse(el.dataset.hours ?? '{}') as { hours: Hours[]; closures: Range[] };
+    if (!hours) return;
+    const now = londonNow();
+    const today = hoursFor(now.date, hours, closures);
+    if (today) {
+      if (now.minutes >= toMin(today.opens) && now.minutes < toMin(today.closes)) {
+        return `Open now, until ${today.closes}`;
+      }
+      if (now.minutes < toMin(today.opens)) return `Opens today at ${today.opens}`;
+    }
+    for (let i = 1; i <= 21; i++) {
+      const date = addDays(now.date, i);
+      const h = hoursFor(date, hours, closures);
+      if (h) {
+        const when = i === 1 ? 'tomorrow' : weekdayOf(date);
+        return `${today ? 'Closed now' : 'Closed today'}. Opens ${when} at ${h.opens}`;
+      }
+    }
+    return undefined;
+  }
+
+  document.querySelectorAll<HTMLElement>('.open-now[data-hours]').forEach((el) => {
+    const text = describe(el);
+    if (text) el.textContent = text;
+  });
+</script>

@@ -1,0 +1,297 @@
+@import './tokens.css';
+
+/* Fonts: self-hosted, Latin subset. Fallbacks are size-adjusted to limit layout shift on swap. */
+@font-face {
+  font-family: 'Bodoni Moda';
+  src: url('/fonts/bodoni-moda-latin-400-normal.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Bodoni Moda';
+  src: url('/fonts/bodoni-moda-latin-500-normal.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Bodoni Moda';
+  src: url('/fonts/bodoni-moda-latin-400-italic.woff2') format('woff2');
+  font-weight: 400;
+  font-style: italic;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Hanken Grotesk';
+  src: url('/fonts/hanken-grotesk-latin-400-normal.woff2') format('woff2');
+  font-weight: 400;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Hanken Grotesk';
+  src: url('/fonts/hanken-grotesk-latin-500-normal.woff2') format('woff2');
+  font-weight: 500;
+  font-style: normal;
+  font-display: swap;
+}
+@font-face {
+  font-family: 'Bodoni Fallback';
+  src: local('Georgia');
+  size-adjust: 96%;
+  ascent-override: 92%;
+}
+@font-face {
+  font-family: 'Hanken Fallback';
+  src: local('Arial');
+  size-adjust: 97%;
+}
+
+:root {
+  --font-display: 'Bodoni Moda', 'Bodoni Fallback', Georgia, serif;
+  --font-body: 'Hanken Grotesk', 'Hanken Fallback', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --bar-h: 56px;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  -webkit-text-size-adjust: 100%;
+  scroll-padding-top: 16px;
+}
+
+body {
+  margin: 0;
+  background: var(--color-white);
+  color: var(--color-ink);
+  font-family: var(--font-body);
+  font-size: var(--text-body);
+  line-height: var(--leading-body);
+}
+
+img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}
+
+a {
+  color: inherit;
+  text-underline-offset: 4px;
+}
+a:hover {
+  opacity: 0.78;
+}
+
+:focus-visible {
+  outline: var(--focus);
+  outline-offset: 3px;
+}
+.on-deep :focus-visible {
+  outline-color: var(--color-white);
+}
+
+h1,
+h2,
+h3 {
+  margin: 0;
+  font-weight: 400;
+}
+p {
+  margin: 0;
+}
+
+.visually-hidden {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.skip-link {
+  position: absolute;
+  left: 12px;
+  top: -100px;
+  z-index: 20;
+  padding: 12px 16px;
+  background: var(--color-deep);
+  color: var(--color-white);
+}
+.skip-link:focus {
+  top: 12px;
+}
+
+/* Layout */
+.wrap {
+  max-width: var(--wrap);
+  margin: 0 auto;
+  padding-left: var(--space-gutter);
+  padding-right: var(--space-gutter);
+}
+.section {
+  padding-top: var(--space-section);
+  padding-bottom: var(--space-section);
+}
+.bg-primary { background: var(--color-primary); color: var(--color-ink); }
+.bg-deep { background: var(--color-deep); color: var(--color-white); }
+.bg-mist { background: var(--color-mist); }
+.bg-white { background: var(--color-white); }
+
+/* Type */
+.display {
+  font-family: var(--font-display);
+  font-weight: 400;
+  font-size: clamp(1.625rem, 4vw, 2rem);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  line-height: 1.2;
+}
+.label {
+  font-family: var(--font-body);
+  font-size: 0.75rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  font-weight: 500;
+  color: var(--color-spice);
+}
+.bg-deep .label { color: var(--color-sand); }
+.bg-primary .label { color: var(--color-ink); }
+.section-title {
+  font-family: var(--font-display);
+  font-weight: 500;
+  font-size: 1rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-spice);
+}
+.muted { color: var(--color-muted); }
+.italic-display {
+  font-family: var(--font-display);
+  font-style: italic;
+}
+.prose { max-width: var(--measure); }
+.prose p + p { margin-top: 1.25rem; }
+.small { font-size: var(--text-small); }
+
+/* Buttons and links */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 52px;
+  padding: 0 32px;
+  font-size: var(--text-label);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  font-weight: 500;
+  text-decoration: none;
+  text-align: center;
+  border: 1px solid var(--color-deep);
+}
+.btn-solid { background: var(--color-deep); color: var(--color-white); }
+.btn-outline { background: transparent; color: var(--color-ink); }
+.bg-deep .btn-solid { background: var(--color-primary); color: var(--color-ink); border-color: var(--color-primary); }
+.bg-deep .btn-outline { color: var(--color-white); border-color: var(--color-primary); }
+.btn-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}
+.tap {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+}
+
+/* Photos */
+.photo {
+  background: var(--color-pale);
+  aspect-ratio: 4 / 5;
+  width: 100%;
+  overflow: hidden;
+}
+.photo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Dish rows (shared by the menu pages and the home extract) */
+.dish {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  margin-bottom: 20px;
+}
+.dish-name { font-weight: 500; }
+.dish-desc { color: var(--color-muted); }
+.dish-price {
+  white-space: nowrap;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.dish-price small {
+  display: block;
+  font-size: var(--text-small);
+  color: var(--color-muted);
+}
+
+@media (max-width: 720px) {
+  .section {
+    padding-top: 64px;
+    padding-bottom: 64px;
+  }
+  .wrap {
+    padding-left: 24px;
+    padding-right: 24px;
+  }
+  body {
+    padding-bottom: calc(var(--bar-h) + env(safe-area-inset-bottom));
+  }
+  html {
+    scroll-padding-bottom: calc(var(--bar-h) + 16px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    scroll-behavior: auto !important;
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+@media print {
+  .no-print,
+  .site-header,
+  .mobile-bar,
+  .site-footer,
+  .notice-banner {
+    display: none !important;
+  }
+  body {
+    padding: 0;
+    color: #000;
+    background: #fff;
+  }
+  .bg-primary,
+  .bg-deep,
+  .bg-mist {
+    background: #fff !important;
+    color: #000 !important;
+  }
+  a {
+    text-decoration: none;
+  }
+}

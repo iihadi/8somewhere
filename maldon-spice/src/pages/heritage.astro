@@ -1,0 +1,267 @@
+---
+import { Image } from 'astro:assets';
+import type { ImageMetadata, MarkdownInstance } from 'astro';
+import Base from '../layouts/Base.astro';
+import heritage from '../../data/heritage.json';
+import imagesJson from '../../data/images.json';
+import { bookHref } from '../lib/site';
+import { breadcrumbs, heritageArticle } from '../lib/jsonld';
+
+// The article is migrated, never retyped: scripts/migrate-heritage.mjs writes src/content/heritage.md
+// from the live legacy page. Until that has run, the page shows a bracketed notice, which the
+// placeholder check refuses to ship.
+const articles = import.meta.glob<MarkdownInstance<Record<string, unknown>>>('../content/heritage.md', { eager: true });
+const article = Object.values(articles)[0];
+
+// Gallery: ids from data/heritage.json, files from src/assets/heritage/ (named as on the legacy site).
+const files = import.meta.glob<{ default: ImageMetadata }>('../assets/heritage/*', { eager: true });
+const byName = new Map(Object.entries(files).map(([k, v]) => [k.split('/').pop()!, v.default]));
+type ImgEntry = { id: string; url: string; alt?: string };
+const entries = imagesJson.images as ImgEntry[];
+const gallery = heritage.gallery
+  .map((id) => entries.find((e) => e.id === id))
+  .filter((e): e is ImgEntry => !!e)
+  .map((e) => ({ ...e, src: byName.get(e.url.split('/').pop()!) }))
+  .filter((e) => e.src && e.alt);
+const leadImage = gallery[0]?.src;
+---
+
+<Base
+  path="/heritage/"
+  jsonld={[heritageArticle(leadImage ? new URL(leadImage.src, 'https://maldonspice.co.uk').href : undefined), breadcrumbs([{ name: 'Maldon Town History', path: '/heritage/' }])]}
+>
+  <section class="bg-primary">
+    <div class="title-band">
+      <h1 class="h1">{heritage.title}</h1>
+      <p class="italic-display headline">{heritage.headline}</p>
+      <p class="byline">Written by {heritage.author}. {heritage.creditLine}.</p>
+    </div>
+  </section>
+
+  {
+    gallery.length > 0 && (
+      <section class="strip-section" aria-label="Photographs of Maldon">
+        <div class="wrap">
+          <ul class="strip" tabindex="0" aria-label="Photographs of Maldon, scrolls sideways">
+            {gallery.map((g, i) => (
+              <li class="tile">
+                <Image
+                  src={g.src!}
+                  alt={g.alt!}
+                  widths={[320, 640].filter((w) => w <= g.src!.width)}
+                  sizes="(max-width: 720px) 240px, 300px"
+                  loading={i < 2 ? 'eager' : 'lazy'}
+                />
+              </li>
+            ))}
+          </ul>
+          <p class="small muted strip-note">Scroll sideways for more. {heritage.creditLine}.</p>
+        </div>
+      </section>
+    )
+  }
+
+  <section class="body-section">
+    <div class="wrap body">
+      <aside class="dates" aria-labelledby="key-dates">
+        <h2 id="key-dates" class="section-title">Key dates</h2>
+        <dl>
+          {
+            heritage.keyDates.map((d) => (
+              <div class="date-row">
+                <dt>{d.year}</dt>
+                <dd class="muted">{d.text.replace(/\s*\(Per the legacy page; owner to confirm\.\)/, '')}</dd>
+              </div>
+            ))
+          }
+        </dl>
+      </aside>
+
+      <article class="article">
+        {
+          article ? (
+            <article.Content />
+          ) : (
+            <p class="not-migrated">
+              [Article not yet migrated. Run npm run migrate:heritage while the legacy page is still online.]
+            </p>
+          )
+        }
+      </article>
+    </div>
+  </section>
+
+  <section class="bg-mist section">
+    <div class="closing">
+      <h2 class="display">Maldon Spice on the High Street</h2>
+      <p class="muted">
+        Maldon Spice is owned and run by Jhual Hafiz and his family. Jhual has more than thirty years in restaurants and
+        ran Maldon Tandoori before opening here at 111 High Street, where Maldon's first Indian restaurant opened in
+        1978.
+      </p>
+      <p class="muted">He is a former Mayor of Maldon and a serving town councillor.</p>
+      <div class="btn-row center">
+        <a class="btn btn-solid" href={bookHref}>Reserve a table</a>
+        <a class="btn btn-outline" href="/menu/">See the menu</a>
+      </div>
+      <p class="small"><a class="tap" href="/visit/">Opening hours and how to find us</a></p>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .center {
+    justify-content: center;
+  }
+  .title-band {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 80px 32px 72px;
+    text-align: center;
+  }
+  .h1 {
+    margin-bottom: 16px;
+    font-family: var(--font-display);
+    font-size: clamp(30px, 8vw, 48px);
+    line-height: 1.1;
+    letter-spacing: 0.1em;
+    text-indent: 0.1em;
+    text-transform: uppercase;
+  }
+  .headline {
+    margin-bottom: 24px;
+    font-size: clamp(22px, 5vw, 30px);
+    line-height: 1.25;
+  }
+  .byline {
+    font-size: 0.9375rem;
+  }
+
+  .strip-section {
+    padding-top: 72px;
+  }
+  .strip {
+    display: flex;
+    gap: 16px;
+    margin: 0;
+    padding: 0 0 16px;
+    list-style: none;
+    overflow-x: auto;
+    scroll-snap-type: x proximity;
+    /* Edge fade shows there is more to scroll. */
+    mask-image: linear-gradient(to right, #000 85%, transparent);
+  }
+  .tile {
+    flex: 0 0 300px;
+    height: 380px;
+    background: var(--color-pale);
+    scroll-snap-align: start;
+  }
+  .tile :global(img) {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+  .strip-note {
+    margin-top: 8px;
+  }
+
+  .body-section {
+    padding: 72px 0 96px;
+  }
+  .body {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 56px 88px;
+    align-items: flex-start;
+  }
+  .dates {
+    flex: 0 1 280px;
+    min-width: 0;
+  }
+  .dates h2 {
+    margin-bottom: 24px;
+    font-size: 0.9375rem;
+  }
+  dl {
+    margin: 0;
+  }
+  .date-row {
+    display: flex;
+    gap: 16px;
+    margin-bottom: 16px;
+  }
+  dt {
+    flex: 0 0 64px;
+    font-family: var(--font-display);
+    font-size: 1.125rem;
+  }
+  dd {
+    margin: 0;
+  }
+
+  .article {
+    flex: 1 1 440px;
+    min-width: 0;
+    max-width: 36rem;
+  }
+  .article :global(p) {
+    margin: 0 0 1.25rem;
+  }
+  .article :global(p:first-of-type::first-letter) {
+    float: left;
+    margin: 0.08em 0.1em 0 0;
+    font-family: var(--font-display);
+    font-size: 3.6em;
+    line-height: 0.8;
+  }
+  .article :global(h2) {
+    margin: 2rem 0 1rem;
+    font-family: var(--font-display);
+    font-size: 1.375rem;
+  }
+  .article :global(img) {
+    margin: 1.5rem 0;
+  }
+  .not-migrated {
+    padding: 20px 24px;
+    background: var(--color-mist);
+    color: var(--color-muted);
+    font-size: 0.9375rem;
+  }
+
+  .closing {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 0 32px;
+    text-align: center;
+  }
+  .closing h2 {
+    margin-bottom: 24px;
+  }
+  .closing p {
+    margin-bottom: 20px;
+  }
+  .closing .btn-row {
+    margin: 16px 0 12px;
+  }
+
+  @media (max-width: 720px) {
+    .title-band {
+      padding: 56px 24px;
+    }
+    .strip-section {
+      padding-top: 40px;
+    }
+    .tile {
+      flex-basis: 240px;
+      height: 320px;
+    }
+    .body-section {
+      padding: 48px 0 64px;
+    }
+    .closing {
+      padding: 0 24px;
+    }
+  }
+</style>

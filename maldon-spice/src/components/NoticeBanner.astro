@@ -1,0 +1,62 @@
+---
+// Closures in site.json are the only way to express holiday hours. The banner is rendered at build
+// time for closures within the next 14 days, and the script re-checks against today's date so a
+// stale build never shows an expired notice.
+import { closures, closureText, site } from '../lib/site';
+
+const items = closures.map((c) => ({ from: c.from, to: c.to, text: closureText(c) }));
+const today = new Date().toISOString().slice(0, 10);
+const horizon = new Date(Date.now() + 14 * 864e5).toISOString().slice(0, 10);
+const active = items.filter((c) => c.to >= today && c.from <= horizon);
+const manual = site.banner.enabled && site.banner.text ? site.banner.text : '';
+const hasAny = manual || items.length > 0;
+---
+
+{
+  hasAny && (
+    <div class="notice-banner" data-closures={JSON.stringify(items)} hidden={!manual && active.length === 0}>
+      {manual && <p>{manual}</p>}
+      {items.map((c) => (
+        <p data-from={c.from} data-to={c.to} hidden={!active.includes(c)}>
+          {c.text}
+        </p>
+      ))}
+    </div>
+  )
+}
+
+<script>
+  import { londonToday } from '../scripts/time';
+
+  const banner = document.querySelector<HTMLElement>('.notice-banner');
+  if (banner) {
+    const today = londonToday();
+    const horizon = new Date(Date.parse(`${today}T12:00:00Z`) + 14 * 864e5).toISOString().slice(0, 10);
+    let shown = 0;
+    banner.querySelectorAll<HTMLElement>('p').forEach((p) => {
+      const { from, to } = p.dataset;
+      if (!from || !to) {
+        shown++;
+        return;
+      }
+      const on = to >= today && from <= horizon;
+      p.hidden = !on;
+      if (on) shown++;
+    });
+    banner.hidden = shown === 0;
+  }
+</script>
+
+<style>
+  .notice-banner {
+    padding: 10px var(--space-gutter);
+    background: var(--color-pale);
+    color: var(--color-deep);
+    text-align: center;
+    font-weight: 500;
+  }
+  .notice-banner[hidden],
+  .notice-banner p[hidden] {
+    display: none;
+  }
+</style>

@@ -1,0 +1,347 @@
+---
+import Base from '../layouts/Base.astro';
+import OpenNow from '../components/OpenNow.astro';
+import Photo from '../components/Photo.astro';
+import DishRow from '../components/DishRow.astro';
+import VisitBand from '../components/VisitBand.astro';
+import { bookHref, directionsHref, hoursLines, orderHref, phoneHref, site, smsHref } from '../lib/site';
+import { getItem, legendLine } from '../lib/menu';
+import { website } from '../lib/jsonld';
+import { hasImage } from '../lib/images';
+
+const showPair = hasImage('food-chicken-peppers') && hasImage('table-setting-1');
+
+// "From the menu" favourites, pulled from data/menu.json by id (never hand-typed).
+const extract = [
+  { title: 'Starters', ids: ['starters-tikka-tetul', 'starters-sheek-kebab', 'starters-chilli-mushroom'] },
+  { title: 'Grills', ids: ['grills-lamb-chops', 'grills-fit-for-a-king', 'grills-chicken-tandoori'] },
+  { title: 'Biryani', ids: ['biryani-lamb-biryani'] },
+].map((g) => ({ ...g, items: g.ids.map(getItem) }));
+---
+
+<Base path="/" withRestaurant jsonld={[website()]}>
+  <section class="hero bg-primary">
+    <div class="hero-in">
+      <h1 class="wordmark">
+        <span class="w1">Maldon</span>
+        <span class="w2">Spice</span>
+      </h1>
+      <p class="tagline italic-display">{site.tagline}</p>
+      <OpenNow class="hero-hours" />
+      <div class="btn-row center">
+        <a class="btn btn-solid" href={bookHref}>Reserve a table</a>
+        <a class="btn btn-outline" href={orderHref}>Order for collection</a>
+      </div>
+      <p class="menu-link"><a class="tap" href="/menu/">See the menu</a></p>
+    </div>
+  </section>
+
+  <section class="facts" aria-label="Key information">
+    <div class="wrap facts-in">
+      <div>
+        <h2 class="label">Hours</h2>
+        {hoursLines.map((l) => <p>{l.days}<br />{l.times}</p>)}
+      </div>
+      <div>
+        <h2 class="label">Find us</h2>
+        <p>{site.address.streetAddress}<br />{site.address.addressLocality} {site.address.postalCode}</p>
+        <a class="tap" href={directionsHref}>Get directions</a>
+      </div>
+      <div>
+        <h2 class="label">Call or text</h2>
+        <p>{site.phone.display}<br />{site.sms.display}</p>
+        <a class="tap gap" href={phoneHref}>Call</a><a class="tap" href={smsHref}>Text</a>
+      </div>
+      <div>
+        <h2 class="label">Parking</h2>
+        <p>Reimbursed for customers at Butt Lane Car Park</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="bg-mist section">
+    <div class="wrap story">
+      <div class="story-text">
+        <h2 class="display">Our story</h2>
+        <p class="muted">
+          Maldon Spice is run by Jhual and Shamema, who have worked in restaurants for more than thirty years.
+        </p>
+        <p class="muted">
+          Grills are marinated in yoghurt and spices, then baked on skewers in a clay oven over charcoal. There are
+          vegan specials, a dairy-free menu and a full allergen guide.
+        </p>
+        <div class="btn-row">
+          <a class="btn btn-solid" href={bookHref}>Reserve a table</a>
+          <a class="tap" href="/heritage/">Maldon town history</a>
+        </div>
+      </div>
+      <Photo id="food-mixed-grill" class="story-photo" tone="primary" />
+    </div>
+  </section>
+
+  {
+    showPair && (
+      <section class="section pair-section">
+        <div class="wrap pair">
+          <Photo id="food-chicken-peppers" />
+          <Photo id="table-setting-1" class="offset" />
+        </div>
+      </section>
+    )
+  }
+
+  <section class="section extract-section" aria-labelledby="from-menu">
+    <div class="extract">
+      <h2 id="from-menu" class="display center">From the menu</h2>
+      <p class="muted center lede">A few favourites. The full menus show allergens for every dish.</p>
+      {
+        extract.map((g) => (
+          <div class="group">
+            <h3 class="section-title">{g.title}</h3>
+            {g.items.map((item) => (
+              <DishRow item={item} />
+            ))}
+          </div>
+        ))
+      }
+      <p class="small muted legend">{legendLine}. Please tell us about any allergy before you order.</p>
+      <div class="btn-row center">
+        <a class="btn btn-solid" href="/menu/">Open the full menu</a>
+        <a class="tap" href="/menu/#filter">Filter by allergen</a>
+      </div>
+    </div>
+  </section>
+
+  <section id="allergens" class="bg-deep on-deep section">
+    <div class="wrap">
+      <h2 class="display center band-title">Allergens, dairy-free and vegan</h2>
+      <div class="cols">
+        <div class="col">
+          <h3 class="label">Allergy guide</h3>
+          <p>
+            Every dish and the allergens it contains, from gluten to tree nuts and mustard. Please still tell us about
+            any allergy when you book or order.
+          </p>
+          <a class="tap" href="/allergens/">Open the guide</a>
+        </div>
+        <div class="col">
+          <h3 class="label">Dairy-free menu</h3>
+          <p>
+            For pre-booked tables on Sunday, Tuesday, Wednesday and Thursday. On Friday and Saturday, dishes must be
+            pre-ordered. Everything takes a little longer to prepare.
+          </p>
+          <a class="tap" href="/menu/dairy-free/">Dairy-free menu</a>
+        </div>
+        <div class="col">
+          <h3 class="label">Vegan specials</h3>
+          <p>Vegan dishes have their own section on the main menu, alongside vegetable sides, rice and breads.</p>
+          <a class="tap" href="/menu/">Main menu</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section recognition">
+    <div class="recog-in center">
+      <p class="label">Award</p>
+      <p class="italic-display award">{site.awards[0].name}</p>
+      <p class="label">In the press</p>
+      <p class="italic-display press">&ldquo;{site.press[0].headline}&rdquo;</p>
+      <p class="muted">{site.press[0].source}</p>
+    </div>
+  </section>
+
+  <VisitBand />
+</Base>
+
+<style>
+  .center {
+    text-align: center;
+    justify-content: center;
+  }
+  .hero-in {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    padding: 104px 32px 112px;
+  }
+  .wordmark {
+    font-family: var(--font-display);
+    line-height: 1;
+  }
+  .w1 {
+    display: block;
+    font-size: clamp(40px, 10vw, 84px);
+    letter-spacing: var(--tracking-display);
+    text-indent: var(--tracking-display);
+    text-transform: uppercase;
+  }
+  .w2 {
+    display: block;
+    margin-top: 8px;
+    font-style: italic;
+    font-size: clamp(28px, 6vw, 48px);
+    line-height: 1.1;
+  }
+  .tagline {
+    margin: 32px 0 6px;
+    font-size: 1.375rem;
+  }
+  :global(.hero-hours) {
+    margin-bottom: 40px;
+    font-size: 1rem;
+    letter-spacing: 0.06em;
+  }
+  .menu-link {
+    margin-top: 24px;
+  }
+
+  .facts {
+    border-bottom: 1px solid var(--color-hairline);
+  }
+  .facts-in {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 32px 56px;
+    padding-top: 56px;
+    padding-bottom: 56px;
+  }
+  .facts-in > div {
+    flex: 1 1 200px;
+    min-width: 0;
+  }
+  .facts h2 {
+    margin-bottom: 8px;
+  }
+  .gap {
+    margin-right: 20px;
+  }
+
+  .story {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 56px 96px;
+  }
+  .story-text {
+    flex: 0 1 340px;
+    min-width: 0;
+  }
+  .story-text h2 {
+    margin-bottom: 28px;
+  }
+  .story-text p {
+    margin-bottom: 20px;
+  }
+  .story-text .btn-row {
+    margin-top: 12px;
+    gap: 8px 24px;
+  }
+  :global(.story-photo) {
+    flex: 0 1 420px;
+    min-width: 260px;
+  }
+
+  .pair-section {
+    padding-bottom: 40px;
+  }
+  .pair {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 48px 64px;
+  }
+  .pair > :global(.photo) {
+    flex: 0 1 420px;
+    min-width: 260px;
+  }
+  .pair > :global(.offset) {
+    margin-top: 72px;
+  }
+
+  .extract {
+    max-width: 660px;
+    margin: 0 auto;
+    padding: 0 32px;
+  }
+  .lede {
+    margin: 16px 0 56px;
+  }
+  .group {
+    margin-bottom: 56px;
+  }
+  .group h3 {
+    margin-bottom: 16px;
+    font-size: 0.9375rem;
+  }
+  .legend {
+    margin-bottom: 32px;
+  }
+  .extract .btn-row {
+    gap: 8px 28px;
+  }
+
+  .band-title {
+    margin-bottom: 72px;
+  }
+  .cols {
+    display: flex;
+    flex-wrap: wrap;
+  }
+  .col {
+    flex: 1 1 280px;
+    min-width: 0;
+    padding: 0 40px;
+    border-left: 1px solid var(--color-hairline-deep);
+  }
+  .col h3 {
+    margin-bottom: 16px;
+  }
+  .col p {
+    margin-bottom: 20px;
+    color: var(--color-pale);
+  }
+
+  .recog-in {
+    max-width: 760px;
+    margin: 0 auto;
+    padding: 0 32px;
+  }
+  .recognition .label {
+    margin-bottom: 16px;
+  }
+  .award {
+    margin-bottom: 56px;
+    font-size: 1.875rem;
+    line-height: 1.3;
+  }
+  .press {
+    margin-bottom: 8px;
+    font-size: 1.5rem;
+    line-height: 1.4;
+  }
+
+  @media (max-width: 720px) {
+    .hero-in {
+      padding: 56px 20px 64px;
+    }
+    .pair > :global(.offset) {
+      margin-top: 0;
+    }
+    .col {
+      padding: 28px 0 0;
+      border-left: 0;
+      border-top: 1px solid var(--color-hairline-deep);
+      margin-bottom: 28px;
+    }
+    .band-title {
+      margin-bottom: 40px;
+    }
+    .extract,
+    .recog-in {
+      padding: 0 24px;
+    }
+  }
+</style>

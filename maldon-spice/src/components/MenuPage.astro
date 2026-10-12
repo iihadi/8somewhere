@@ -1,0 +1,152 @@
+---
+import Base from '../layouts/Base.astro';
+import MenuTabs from './MenuTabs.astro';
+import DishRow from './DishRow.astro';
+import AllergenFilter from './AllergenFilter.astro';
+import { getMenu, legendLine } from '../lib/menu';
+import { breadcrumbs, menuSchema } from '../lib/jsonld';
+
+interface Props {
+  id: string;
+  intro: string;
+}
+const { id, intro } = Astro.props;
+const menu = getMenu(id);
+const isFood = id !== 'drinks';
+const trail = [{ name: 'Menu', path: '/menu/' }, ...(id === 'main' ? [] : [{ name: menu.title, path: menu.path }])];
+---
+
+<Base path={menu.path} jsonld={[menuSchema(menu), breadcrumbs(trail)]}>
+  <section class="bg-primary">
+    <div class="head">
+      <p class="menus-title" aria-hidden="true">Menus</p>
+      <h1 class="visually-hidden">{menu.title}</h1>
+      <p class="intro">{intro}</p>
+    </div>
+  </section>
+
+  <div class="menu-wrap">
+    <MenuTabs current={id} />
+    <p class="small muted notes">
+      Prices in pounds.{isFood && ' Please tell us about any allergy before you order.'}
+    </p>
+    {isFood && <p class="small muted legend">{legendLine}</p>}
+
+    {menu.filterable && <AllergenFilter />}
+
+    <nav class="jump no-print" aria-label="Menu sections">
+      {menu.sections.map((s) => <a href={`#${s.id}`} data-jump={s.id}>{s.title}</a>)}
+    </nav>
+
+    <div data-menu>
+      {
+        menu.sections.map((s) => (
+          <section id={s.id} class="menu-section" data-section aria-labelledby={`${s.id}-h`}>
+            <h2 id={`${s.id}-h`} class="section-title">
+              {s.title}
+            </h2>
+            {s.note && <p class="section-note muted">{s.note}</p>}
+            {s.items.map((item) => (
+              <DishRow item={item} />
+            ))}
+          </section>
+        ))
+      }
+    </div>
+
+    {
+      isFood && (
+        <p class="small muted footnote">
+          Some dishes contain nuts. Our staff can advise. <a href="/allergens/">Read the allergen guide</a>.
+        </p>
+      )
+    }
+  </div>
+</Base>
+
+<style>
+  .head {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 64px 32px 56px;
+    text-align: center;
+  }
+  .menus-title {
+    margin-bottom: 20px;
+    font-family: var(--font-display);
+    font-size: clamp(32px, 9vw, 48px);
+    letter-spacing: 0.14em;
+    text-indent: 0.14em;
+    text-transform: uppercase;
+  }
+  .intro {
+    max-width: 32em;
+    margin: 0 auto;
+  }
+  .menu-wrap {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 48px 32px 120px;
+  }
+  .notes {
+    text-align: center;
+  }
+  .legend {
+    text-align: center;
+    margin: 4px 0 32px;
+  }
+  .jump {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 24px;
+    margin: 32px 0 48px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--color-hairline);
+  }
+  .jump a {
+    display: inline-flex;
+    align-items: center;
+    min-height: 44px;
+    white-space: nowrap;
+    font-size: var(--text-label);
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    font-weight: 500;
+  }
+  .jump a[hidden] {
+    display: none;
+  }
+  .menu-section {
+    margin-bottom: 56px;
+    scroll-margin-top: 16px;
+  }
+  .menu-section[hidden] {
+    display: none;
+  }
+  .menu-section h2 {
+    margin-bottom: 8px;
+  }
+  .section-note {
+    margin-bottom: 20px;
+    font-size: 0.9375rem;
+  }
+  .menu-section h2 + :global(.dish) {
+    margin-top: 20px;
+  }
+  .footnote {
+    margin-top: 24px;
+  }
+  @media (max-width: 720px) {
+    .head {
+      padding: 48px 24px 40px;
+    }
+    .menu-wrap {
+      padding: 40px 20px 72px;
+    }
+    .jump {
+      flex-wrap: nowrap;
+      overflow-x: auto;
+      mask-image: linear-gradient(to right, #000 85%, transparent);
+    }
+  }
+</style>

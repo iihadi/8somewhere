@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.astro/
+.env
+.env.*
+# Legacy PDFs and other large source downloads (commit only the extracted text)
+data/source/
+# Raw heritage downloads before processing
+.heritage-tmp/

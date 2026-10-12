@@ -1,0 +1,43 @@
+---
+// Portrait photo slot. Looks for a processed image at src/assets/images/<id>.<ext>; alt text comes
+// from data/images.json. Until the image exists, the slot is a plain colour block with no text, so
+// no placeholder copy can ship.
+import { Picture } from 'astro:assets';
+import imagesJson from '../../data/images.json';
+import { loadImage } from '../lib/images';
+
+interface Props {
+  id: string;
+  sizes?: string;
+  eager?: boolean;
+  class?: string;
+  tone?: 'primary' | 'pale';
+}
+const { id, sizes = '(max-width: 720px) 100vw, 420px', eager = false, tone = 'pale' } = Astro.props;
+
+const img = await loadImage(id);
+const entry = (imagesJson.images as { id: string; alt?: string }[]).find((i) => i.id === id);
+const alt = entry?.alt ?? '';
+---
+
+<div class:list={['photo', `tone-${tone}`, Astro.props.class]} aria-hidden={img ? undefined : 'true'}>
+  {
+    img && (
+      <Picture
+        src={img}
+        alt={alt}
+        formats={['avif', 'webp']}
+        widths={[480, 800, 1200].filter((w) => w <= img.width)}
+        sizes={sizes}
+        loading={eager ? 'eager' : 'lazy'}
+        fetchpriority={eager ? 'high' : undefined}
+      />
+    )
+  }
+</div>
+
+<style>
+  .tone-primary {
+    background: var(--color-primary);
+  }
+</style>

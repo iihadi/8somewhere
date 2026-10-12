@@ -1,0 +1,31 @@
+{
+  "name": "maldon-spice",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=22.12.0"
+  },
+  "scripts": {
+    "dev": "astro dev",
+    "prebuild": "node scripts/check-menu.mjs",
+    "build": "astro build",
+    "postbuild": "node scripts/build-htaccess.mjs && node scripts/check-placeholders.mjs",
+    "build:preview": "node scripts/run-preview-build.mjs",
+    "preview": "astro preview",
+    "check": "astro check",
+    "check:menu": "node scripts/check-menu.mjs",
+    "check:placeholders": "node scripts/check-placeholders.mjs",
+    "migrate:heritage": "node scripts/migrate-heritage.mjs",
+    "icons": "node scripts/make-icons.mjs"
+  },
+  "dependencies": {
+    "@astrojs/sitemap": "^3.7.4",
+    "astro": "^7.3.8"
+  },
+  "devDependencies": {
+    "@astrojs/check": "^0.9.10",
+    "sharp": "^0.35.5",
+    "typescript": "^6.0.3"
+  }
+}

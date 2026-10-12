@@ -1,0 +1,81 @@
+{
+  "name": "Maldon Spice",
+  "url": "https://maldonspice.co.uk",
+  "locale": "en-GB",
+  "timezone": "Europe/London",
+  "tagline": "Indian restaurant on Maldon High Street",
+  "owners": "Jhual and Shamema",
+  "address": {
+    "streetAddress": "111 High Street",
+    "addressLocality": "Maldon",
+    "addressRegion": "Essex",
+    "postalCode": "CM9 5BS",
+    "addressCountry": "GB"
+  },
+  "geo": null,
+  "geoNote": "TODO: take latitude/longitude from the Google Business Profile or Google Maps pin for 111 High St and store here.",
+  "phone": {
+    "display": "01621 853162",
+    "e164": "+441621853162"
+  },
+  "sms": {
+    "display": "07904 659177",
+    "e164": "+447904659177"
+  },
+  "email": null,
+  "emailNote": "Legacy site uses a Gmail address. Create a domain mailbox (for example info@maldonspice.co.uk) at IONOS and use that. Until then, omit email from the site.",
+  "hours": [
+    {
+      "days": [
+        "Tuesday",
+        "Wednesday",
+        "Thursday",
+        "Friday",
+        "Saturday",
+        "Sunday"
+      ],
+      "opens": "17:00",
+      "closes": "22:00"
+    }
+  ],
+  "closures": [],
+  "closuresExample": {
+    "from": "2026-12-25",
+    "to": "2026-12-27",
+    "note": "Closed for Christmas. Back on 28 December."
+  },
+  "banner": {
+    "enabled": false,
+    "text": ""
+  },
+  "parking": "Parking is reimbursed for customers at Butt Lane Car Park.",
+  "collectionOnly": true,
+  "mobi": {
+    "bookUrl": null,
+    "orderUrl": null,
+    "orderDomainPlan": "order.maldonspice.co.uk via Mobi custom domain (confirm support and DNS records with Mobi)",
+    "payOnCollection": "UNVERIFIED. Do not mention 'pay on collection' on the site until confirmed."
+  },
+  "social": {
+    "facebook": "https://www.facebook.com/Maldonspice1/",
+    "instagram": "https://www.instagram.com/maldonspice/",
+    "x": "https://twitter.com/maldonspice"
+  },
+  "googleBusinessProfile": "https://maps.google.com/?cid=647324782308955797",
+  "awards": [
+    {
+      "name": "Euro Asia Curry Award 2022",
+      "also": "Business Man of the Year 2022"
+    }
+  ],
+  "press": [
+    {
+      "headline": "Former mayor and mayoress restaurant adds spice to Maldon high street",
+      "source": "Maldon and Burnham Standard"
+    }
+  ],
+  "reviews": [],
+  "reviewsNote": "Add 3 recent, real Google reviews with author first name, date and a link to the review, with the reviewer's permission or per Google's terms. Do not use the legacy widget. Refresh quarterly.",
+  "ownerFullName": "Jhual Hafiz",
+  "ownerNote": "From the legacy heritage page. The About text also names Shamema. Confirm which names to publish."
+}
