@@ -42,6 +42,9 @@ Components to build: `Header`, `MobileBar`, `Hero`, `FactsStrip`, `StoryBlock`, 
 `site.json` is the only place for hours, closures, banner and parking text. Build converts it to: Facts, Visit, footer, JSON-LD hours, closure banner and the open-now badge. Document in a README how the family edits `site.json` (GitHub web editor with a pull-request-free `main` branch protected only by checks, or Decap CMS later). Cloudflare Pages rebuilds on commit.
 
 ## Hosting and deploy
+
+> **Decision (12 October 2026): host on IONOS webspace instead of Cloudflare Pages.** The build writes `dist/.htaccess` from `data/redirects.csv` (redirects, 410s, headers, caching, 404). Deploy by SFTP into a new folder, then switch the domain's target folder at cutover; rollback is switching it back. See `README.md` and `.github/workflows/maldon-spice-deploy.yml`. The Cloudflare notes below are kept as the fallback.
+
 - **Cloudflare Pages**, connected to the git repo. Build command `pnpm build`, output `dist`. Preview deployments per branch with `noindex` headers. Production branch `main`.
 - Custom domain `maldonspice.co.uk` (apex) and `www` redirecting to apex. HTTPS automatic. Apply `data/_headers` and `data/_redirects` (copy to `public/`).
 - **Domain, DNS and email stay at IONOS.** Do not move nameservers unless the owner asks. At cutover add the records Cloudflare Pages requires for the apex and `www` (CNAME flattening or A/AAAA as instructed; IONOS may require a CNAME for `www` and an A record or ALIAS for the apex: check IONOS DNS capabilities before launch day, and if apex CNAME is not supported, consider moving DNS only (not email) to Cloudflare).

@@ -7,7 +7,7 @@ You are building the new public website for **Maldon Spice**, an Indian restaura
 A small, fast, static, accessible site. Pages: Home, Menu (Main / Dairy-free / Drinks), Allergens, Visit, Our story, Maldon heritage (migrate existing page), Privacy and cookies, 404.
 
 - **Stack:** latest stable Astro, TypeScript, plain CSS driven by `design/tokens.css` (no Tailwind, no UI kit), vanilla JS only where needed (menu allergen filter, open-now badge, closures banner). Node scripts only (`.mjs`), the owner works on Windows.
-- **Host:** Cloudflare Pages. Domain, DNS and email stay at IONOS. See `docs/08-build-deploy-migration.md`.
+- **Host:** IONOS webspace (owner decision, 12 October 2026), served by Apache with a generated `.htaccess`. Domain, DNS and email stay at IONOS. See `README.md` (Hosting on IONOS) and `docs/08-build-deploy-migration.md`.
 - **Ordering and booking** stay in Mobi POS. The website links to Mobi; it does not take orders or payments. See `docs/05-mobi-integration.md`.
 
 ## Read in this order
@@ -40,7 +40,7 @@ A small, fast, static, accessible site. Pages: Home, Menu (Main / Dairy-free / D
 - `docs/09-quality-accessibility-performance.md` checklist passes.
 - Redirect map verified with `scripts/check-redirects.mjs` against the live legacy URL list.
 - JSON-LD validates (Rich Results Test / schema.org validator) for Home and Menu.
-- Preview deployed on a Cloudflare Pages URL with `noindex`, ready for the owners to review.
+- Preview deployed on an IONOS preview subdomain with `noindex`, ready for the owners to review.
 - `docs/10-open-questions.md` updated with answers or still-open items.
 
 ## When blocked

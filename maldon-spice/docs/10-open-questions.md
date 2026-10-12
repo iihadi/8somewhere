@@ -22,9 +22,17 @@ Answer, or record the safe default used. Update this file as work proceeds.
 14d. **Subheadings and a key-dates list** on the heritage page change the presentation of the author's article. Approve with the author or owner first. Default: key dates only as a separate aside, no subheadings.
 15. **Who edits `site.json`** (hours, closures, banner)? Teach them the GitHub web editor, or add Decap later.
 
+## Answered or defaulted during the build (12 October 2026)
+- **Heritage article:** the text was supplied by the owner's team and stored unchanged in `src/content/heritage.md`. The legacy closing paragraph about Maldon Spice is left out of the article; the page's own closing block covers the same facts **without** the Maldon District Islamic Cultural Association line (still needs the owner's OK to add, item 14b). The owner should still confirm permission from Stephen Nunn (item 14).
+- **Author's spellings kept as written** ("Earldorman", "Brythnoth", "centered", "epitomized"). The usual spellings are "Ealdorman" and "Byrhtnoth"; ask the author whether to correct them. The key-dates list uses "Brythnoth" to match the article.
+- **Heritage photographs** are not downloaded yet (the build environment could not reach the legacy site). Run `npm run migrate:heritage` locally while the old site is up. Draft alt text for the 8 gallery images is in `data/images.json` with `altReviewed: false`; check each against the actual photo.
+- **Allergens page wording** "we cannot guarantee that any dish is completely free from traces of allergens" is a safe default. Owner to confirm (docs/03).
+- **Privacy page** names IONOS as host and Mobi for bookings; legal trading name still needed (item 7).
+- **Favicon and share image** are interim typeset versions (`npm run icons`) until the logo is vectorised (item 10).
+
 ## Decisions already made (do not reopen without a reason)
 - Colour: blue-grey `#A5BCC4` leads; deep `#2F4752`, pale and mist tints, white; `spice` and `sand` as small accents.
-- Static Astro on Cloudflare Pages; IONOS keeps domain, DNS and email.
+- Static Astro on IONOS webspace (changed from Cloudflare Pages, 12 October 2026); IONOS keeps domain, DNS and email.
 - Collection only, no delivery, no online payments.
 - Ordering and booking stay in Mobi POS; website links out.
 - No Google Analytics, no cookie banner (cookieless analytics only), no third-party widgets, no map on load.
@@ -37,7 +45,7 @@ Answer, or record the safe default used. Update this file as work proceeds.
 - **SEO loss at cutover.** Mitigation: full crawl, one-hop 301s, keep `/heritage/`, monitor Search Console.
 - **Two copies of the menu** (website and Mobi). Mitigation: export diff if available; quarterly price check.
 - **Single maintainer.** Mitigation: README for the family on editing `site.json`; keep dependencies minimal.
-- **IONOS apex DNS limitations.** Mitigation: check DNS capabilities before launch day; fallback is moving DNS only to Cloudflare while leaving mail records identical.
+- **IONOS apex DNS limitations.** Now not an issue: hosting stays on IONOS, so cutover is a change of the domain's target folder, not DNS.
 
 ## Not covered by this handoff
 I could not access `F:\Work\websiteWork\Maldon Spice` from the planning session, could not open Row on 5's own website (its domain rowon5.com is a parked page), and have not rendered the phone layouts myself. The design preview's phone frames and the live pages must be checked on real devices.
